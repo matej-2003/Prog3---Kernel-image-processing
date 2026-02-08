@@ -8,143 +8,166 @@ import java.io.IOException;
 
 public class Main extends JFrame {
 
-    JLabel inputLabel = new JLabel();
-    JLabel outputLabel = new JLabel();
-    JLabel infoLabel = new JLabel("No image selected");
+	JLabel inputLabel = new JLabel();
+	JButton applyBtn = new JButton("Apply");
+	JLabel outputLabel = new JLabel();
+	JLabel infoLabel = new JLabel("No image selected");
 
-    JPanel thumbPanel = new JPanel();
-    JScrollPane scrollPane;
+	JPanel thumbPanel = new JPanel();
+	JScrollPane scrollPane;
 
-    JComboBox<String> kernelBox;
+	JComboBox<String> kernelBox;
 
-    File imageFolder = new File("./data");
+	File imageFolder = new File("./data/");
+	JButton kernelEditorButton = new JButton("Custom Kernel");
+	int[][] customKernel = ImageProcessor.indentiy_kernel;
 
-    public Main() {
-        setTitle("Image Kernel Lab");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLayout(new BorderLayout());
+	public Main() {
+		setTitle("Image Kernel Lab");
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setLayout(new BorderLayout());
 
-        // ===== LEFT: thumbnails =====
-        thumbPanel.setLayout(new BoxLayout(thumbPanel, BoxLayout.Y_AXIS));
-        scrollPane = new JScrollPane(thumbPanel);
-        scrollPane.setPreferredSize(new Dimension(120, 500));
-        add(scrollPane, BorderLayout.WEST);
+		// ===== LEFT: thumbnails =====
+		thumbPanel.setLayout(new BoxLayout(thumbPanel, BoxLayout.Y_AXIS));
+		scrollPane = new JScrollPane(thumbPanel);
+		scrollPane.setPreferredSize(new Dimension(120, 500));
+		add(scrollPane, BorderLayout.WEST);
 
-        // ===== CENTER: images =====
-        JPanel imagePanel = new JPanel(new GridLayout(1, 2));
-        inputLabel.setHorizontalAlignment(JLabel.CENTER);
-        outputLabel.setHorizontalAlignment(JLabel.CENTER);
-        imagePanel.add(inputLabel);
-        imagePanel.add(outputLabel);
-        add(imagePanel, BorderLayout.CENTER);
+		// ===== CENTER: images =====
+		JPanel imagePanel = new JPanel(new GridLayout(1, 2));
+		inputLabel.setHorizontalAlignment(JLabel.CENTER);
+		outputLabel.setHorizontalAlignment(JLabel.CENTER);
+		imagePanel.add(inputLabel);
+		imagePanel.add(outputLabel);
+		add(imagePanel, BorderLayout.CENTER);
 
-        // ===== TOP: controls =====
-        String[] kernels = {
-                "Identity", "Blur", "Gaussian", "Sharpen",
-                "Emboss", "Outline", "Edge", "Sobel X", "Sobel Y"
-        };
+		// ===== TOP: controls =====
+		String[] kernels = {
+				"Identity", "Blur", "Gaussian", "Sharpen",
+				"Emboss", "Outline", "Edge", "Sobel X", "Sobel Y",
+				"Custom"
+		};
 
-        kernelBox = new JComboBox<>(kernels);
 
-        JPanel controlPanel = new JPanel();
-        controlPanel.add(kernelBox);
-        add(controlPanel, BorderLayout.NORTH);
+		kernelBox = new JComboBox<>(kernels);
 
-        // ===== BOTTOM: info =====
-        infoLabel.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
-        add(infoLabel, BorderLayout.SOUTH);
+		JPanel controlPanel = new JPanel();
+		controlPanel.add(kernelBox);
+		controlPanel.add(kernelEditorButton);
+		controlPanel.add(applyBtn);
+		add(controlPanel, BorderLayout.NORTH);
 
-        loadThumbnails();
-        setupActions();
 
-        setSize(1000, 650);
-        setVisible(true);
-    }
+		// ===== BOTTOM: info =====
+		infoLabel.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
+		add(infoLabel, BorderLayout.SOUTH);
 
-    void loadThumbnails() {
-        File[] files = imageFolder.listFiles();
-        if (files == null) return;
+		loadThumbnails();
+		setupActions();
 
-        for (File file : files) {
-            try {
-                BufferedImage img = ImageIO.read(file);
-                if (img == null) continue;
+		setSize(1000, 650);
+		setVisible(true);
+	}
 
-                Image thumb = img.getScaledInstance(80, 80, Image.SCALE_SMOOTH);
-                JLabel thumbLabel = new JLabel(new ImageIcon(thumb));
-                thumbLabel.setBorder(BorderFactory.createLineBorder(Color.GRAY));
-                thumbLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+	void loadThumbnails() {
+		File[] files = imageFolder.listFiles();
+		if (files == null) return;
 
-                thumbLabel.addMouseListener(new MouseAdapter() {
-                    public void mouseClicked(MouseEvent e) {
-                        loadMainImage(file);
-                    }
-                });
+		for (File file : files) {
+			try {
+				BufferedImage img = ImageIO.read(file);
+				if (img == null) continue;
 
-                thumbPanel.add(thumbLabel);
+				Image thumb = img.getScaledInstance(80, 80, Image.SCALE_SMOOTH);
+				JLabel thumbLabel = new JLabel(new ImageIcon(thumb));
+				thumbLabel.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+				thumbLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-            } catch (IOException e) {
-                System.out.println("Failed: " + file.getName());
-            }
-        }
-    }
+				thumbLabel.addMouseListener(new MouseAdapter() {
+					public void mouseClicked(MouseEvent e) {
+						loadMainImage(file);
+					}
+				});
 
-    void loadMainImage(File file) {
-        try {
-            BufferedImage img = ImageIO.read(file);
-            inputLabel.setIcon(new ImageIcon(img));
-            outputLabel.setIcon(null);
+				thumbPanel.add(thumbLabel);
 
-            GetSetPixels.input_img = img;
-            GetSetPixels.width = img.getWidth();
-            GetSetPixels.height = img.getHeight();
-            GetSetPixels.output_img = new BufferedImage(
-                    GetSetPixels.width,
-                    GetSetPixels.height,
-                    BufferedImage.TYPE_INT_ARGB
-            );
+			} catch (IOException e) {
+				System.out.println("Failed: " + file.getName());
+			}
+		}
+	}
 
-            long kb = file.length() / 1024;
+	public void setCustomKernel(int[][] kernel) {
+		customKernel = kernel;
+	}
 
-            infoLabel.setText(
-                    "File: " + file.getName() +
-                            " | Size: " + img.getWidth() + "x" + img.getHeight() +
-                            " | Disk: " + kb + " KB"
-            );
+	void loadMainImage(File file) {
+		try {
+			BufferedImage img = ImageIO.read(file);
+			inputLabel.setIcon(new ImageIcon(img));
+			outputLabel.setIcon(null);
 
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+			ImageProcessor.input_img = img;
+			ImageProcessor.width = img.getWidth();
+			ImageProcessor.height = img.getHeight();
+			ImageProcessor.output_img = new BufferedImage(
+					ImageProcessor.width,
+					ImageProcessor.height,
+					BufferedImage.TYPE_INT_ARGB
+			);
 
-    void setupActions() {
-        kernelBox.addActionListener(e -> {
-            String selected = (String) kernelBox.getSelectedItem();
+			long kb = file.length() / 1024;
 
-            GetSetPixels.output_img = new BufferedImage(
-                    GetSetPixels.width,
-                    GetSetPixels.height,
-                    BufferedImage.TYPE_INT_ARGB
-            );
+			infoLabel.setText(
+					"File: " + file.getName() +
+							" | Size: " + img.getWidth() + "x" + img.getHeight() +
+							" | Disk: " + kb + " KB"
+			);
 
-            switch (selected) {
-                case "Blur" -> GetSetPixels.kernel_convolution(GetSetPixels.blur_kernel);
-                case "Gaussian" -> GetSetPixels.kernel_convolution(GetSetPixels.gaussian_kernel);
-                case "Sharpen" -> GetSetPixels.kernel_convolution(GetSetPixels.sharpen_kernel);
-                case "Emboss" -> GetSetPixels.kernel_convolution(GetSetPixels.emboss_kernel);
-                case "Outline" -> GetSetPixels.kernel_convolution(GetSetPixels.outline_kernel);
-                case "Edge" -> GetSetPixels.kernel_convolution(GetSetPixels.edge_kernel);
-                case "Sobel X" -> GetSetPixels.kernel_convolution(GetSetPixels.sobel_x);
-                case "Sobel Y" -> GetSetPixels.kernel_convolution(GetSetPixels.sobel_y);
-                default -> GetSetPixels.kernel_convolution(GetSetPixels.indentiy_kernel);
-            }
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 
-            outputLabel.setIcon(new ImageIcon(GetSetPixels.output_img));
-        });
-    }
+	void setupActions() {
+		kernelBox.addActionListener(e -> apply_kernel(ImageProcessor::get_edge_extend));
+		applyBtn.addActionListener(e -> apply_kernel(ImageProcessor::get_edge_extend));
 
-    public static void main(String[] args) {
-        GetSetPixels.init_kernels();
-        new Main();
-    }
+		kernelEditorButton.addActionListener(e -> {
+			new KernelEditorUI(this);
+		});
+	}
+
+	public void apply_kernel(ImageProcessor.EdgeHandler edge_handler) {
+		String selected = (String) kernelBox.getSelectedItem();
+
+		ImageProcessor.output_img = new BufferedImage(
+				ImageProcessor.width,
+				ImageProcessor.height,
+				BufferedImage.TYPE_INT_ARGB
+		);
+
+		long startTime = System.nanoTime();
+		switch (selected) {
+			case "Blur" -> ImageProcessor.kernel_convolution(ImageProcessor.blur_kernel, edge_handler);
+			case "Gaussian" -> ImageProcessor.kernel_convolution(ImageProcessor.gaussian_kernel, edge_handler);
+			case "Sharpen" -> ImageProcessor.kernel_convolution(ImageProcessor.sharpen_kernel, edge_handler);
+			case "Emboss" -> ImageProcessor.kernel_convolution(ImageProcessor.emboss_kernel, edge_handler);
+			case "Outline" -> ImageProcessor.kernel_convolution(ImageProcessor.outline_kernel, edge_handler);
+			case "Edge" -> ImageProcessor.kernel_convolution(ImageProcessor.edge_kernel, edge_handler);
+			case "Sobel X" -> ImageProcessor.kernel_convolution(ImageProcessor.sobel_x, edge_handler);
+			case "Sobel Y" -> ImageProcessor.kernel_convolution(ImageProcessor.sobel_y, edge_handler);
+			case "Custom" -> ImageProcessor.kernel_convolution(customKernel, edge_handler);
+			default -> ImageProcessor.kernel_convolution(ImageProcessor.indentiy_kernel, edge_handler);
+		}
+
+		long stopTime = System.nanoTime();
+		System.out.println(stopTime - startTime);
+		outputLabel.setIcon(new ImageIcon(ImageProcessor.output_img));
+	}
+
+	public static void main(String[] args) {
+		ImageProcessor.init_kernels();
+		new Main();
+	}
 }
