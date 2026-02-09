@@ -1,11 +1,12 @@
 import java.awt.*;
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableColumn;
 
 public class OpSequence extends JPanel {
 
-    // LEFT SIDE
-    public JList<String> operation_list;
-    public DefaultListModel<String> operation_model;
+    public JTable operation_table;
+    public DefaultTableModel table_model;
 
     public JButton add_button;
     public JButton remove_button;
@@ -13,13 +14,12 @@ public class OpSequence extends JPanel {
     public JButton down_button;
 
     public JComboBox<String> kernel_select;
+    public JComboBox<String> edge_select;
     public JTextArea custom_kernel_area;
 
-    // RIGHT SIDE
     public JLabel operation_count_label;
     public JLabel estimated_ops_label;
 
-    // BOTTOM
     public JTextArea console_area;
     public JButton run_button;
     public JButton save_button;
@@ -29,97 +29,151 @@ public class OpSequence extends JPanel {
         "Emboss", "Outline", "Edge", "Sobel X", "Sobel Y", "Custom"
     };
 
+    public String edge_list[] = {
+        "Zero padding", "Clamp", "Wrap", "Mirror"
+    };
+
     public OpSequence() {
-        setLayout(new BorderLayout(8,8));
+        setLayout(new BorderLayout(5, 5));
 
-        // ===== LEFT PANEL =====
-        JPanel left_panel = new JPanel(new BorderLayout(5,5));
+        JPanel center_panel = new JPanel(new GridLayout(1, 2, 5, 5));
 
-        operation_model = new DefaultListModel<>();
-        operation_list = new JList<>(operation_model);
-        JScrollPane list_scroll = new JScrollPane(operation_list);
+        // ================= LEFT: Operation Sequence =================
+        JPanel left_panel = new JPanel(new BorderLayout(5, 5));
+        left_panel.setBorder(BorderFactory.createTitledBorder("Operation Sequence"));
 
-        left_panel.add(new JLabel("Operation sequence:"), BorderLayout.NORTH);
-        left_panel.add(list_scroll, BorderLayout.CENTER);
+        table_model = new DefaultTableModel(
+                new Object[]{"#", "Kernel", "Edge handling"}, 0
+        );
+        
+        // --- POPULATE INITIAL VALUES ---
+        table_model.addRow(new Object[]{"1", "Blur", "Wrap"});
+        table_model.addRow(new Object[]{"2", "Sobel X", "Clamp"});
+        table_model.addRow(new Object[]{"3", "Sharpen", "Mirror"});
 
-        // Toolbar buttons
-        JPanel toolbar = new JPanel(new GridLayout(2,2,5,5));
+        operation_table = new JTable(table_model);
+        
+        // --- SET COLUMN WIDTH FOR "#" ---
+        TableColumn idColumn = operation_table.getColumnModel().getColumn(0);
+        idColumn.setPreferredWidth(30);
+        idColumn.setMaxWidth(40);
+        idColumn.setMinWidth(25);
+
+        left_panel.add(new JScrollPane(operation_table), BorderLayout.CENTER);
+
+        // --- BUTTONS WITH BETTER ICONS ---
+        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 2));
+        
+        // Using common UIManager keys that look like Add/Remove/Up/Down
         add_button = new JButton("Add");
         remove_button = new JButton("Remove");
-        up_button = new JButton("Move Up");
-        down_button = new JButton("Move Down");
+        up_button = new JButton("Up");
+        down_button = new JButton("Down");
+
+        // Set tooltips so users know what they do
+        add_button.setToolTipText("Add Operation");
+        remove_button.setToolTipText("Remove Operation");
+        up_button.setToolTipText("Move Up");
+        down_button.setToolTipText("Move Down");
 
         toolbar.add(add_button);
         toolbar.add(remove_button);
+        toolbar.add(new JSeparator(SwingConstants.VERTICAL));
         toolbar.add(up_button);
         toolbar.add(down_button);
 
-        // Kernel selector
+        left_panel.add(toolbar, BorderLayout.SOUTH);
+
+        // ================= RIGHT: Settings & Info =================
+        JPanel right_panel = new JPanel(new BorderLayout(5, 5));
+        right_panel.setBorder(BorderFactory.createTitledBorder("Settings & Info"));
+
+        // SETTINGS PANEL (GridBagLayout for Form Alignment)
+        JPanel settings_panel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(4, 4, 4, 4);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
         kernel_select = new JComboBox<>(kernel_list);
+        edge_select = new JComboBox<>(edge_list);
+        custom_kernel_area = new JTextArea(13, 12);
 
-        JPanel kernel_panel = new JPanel(new BorderLayout(5,5));
-        kernel_panel.add(new JLabel("Kernel:"), BorderLayout.NORTH);
-        kernel_panel.add(kernel_select, BorderLayout.CENTER);
+        // Row 0: Kernel
+        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0;
+        settings_panel.add(new JLabel("Kernel:"), gbc);
+        gbc.gridx = 1; gbc.weightx = 1.0;
+        settings_panel.add(kernel_select, gbc);
 
-        // Custom kernel input
-        custom_kernel_area = new JTextArea(4,10);
-        JScrollPane custom_scroll = new JScrollPane(custom_kernel_area);
+        // Row 1: Edge Handling
+        gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 0;
+        settings_panel.add(new JLabel("Edge handling:"), gbc);
+        gbc.gridx = 1; gbc.weightx = 1.0;
+        settings_panel.add(edge_select, gbc);
 
-        JPanel custom_panel = new JPanel(new BorderLayout(5,5));
-        custom_panel.add(new JLabel("Custom kernel:"), BorderLayout.NORTH);
-        custom_panel.add(custom_scroll, BorderLayout.CENTER);
+        // Row 2: Custom Kernel
+        gbc.gridx = 0; gbc.gridy = 2; gbc.weightx = 0;
+        gbc.anchor = GridBagConstraints.NORTHWEST;
+        settings_panel.add(new JLabel("Custom kernel:"), gbc);
+        gbc.gridx = 1; gbc.weightx = 1.0;
+        gbc.fill = GridBagConstraints.BOTH;
+        settings_panel.add(new JScrollPane(custom_kernel_area), gbc);
 
-        JPanel left_bottom = new JPanel(new BorderLayout(5,5));
-        left_bottom.add(toolbar, BorderLayout.NORTH);
-        left_bottom.add(kernel_panel, BorderLayout.CENTER);
-        left_bottom.add(custom_panel, BorderLayout.SOUTH);
+        // INFO PANEL
+        JPanel info_panel = new JPanel();
+        info_panel.setLayout(new BoxLayout(info_panel, BoxLayout.Y_AXIS));
+        operation_count_label = new JLabel("Operations in sequence: 3");
+        estimated_ops_label = new JLabel("Estimated total operations: 15.2M");
+        info_panel.add(Box.createVerticalStrut(10));
+        info_panel.add(operation_count_label);
+        info_panel.add(estimated_ops_label);
 
-        left_panel.add(left_bottom, BorderLayout.SOUTH);
+        JPanel right_top = new JPanel(new BorderLayout(5, 5));
+        right_top.add(settings_panel, BorderLayout.NORTH);
+        right_top.add(info_panel, BorderLayout.CENTER);
 
-        // ===== RIGHT PANEL =====
-        JPanel right_panel = new JPanel(new GridLayout(4,1,5,5));
-        right_panel.setBorder(BorderFactory.createTitledBorder("Info & Settings"));
+        right_panel.add(right_top, BorderLayout.NORTH);
 
-        operation_count_label = new JLabel("Operations in sequence: 0");
-        estimated_ops_label = new JLabel("Estimated total operations: 0");
+        center_panel.add(left_panel);
+        center_panel.add(right_panel);
 
-        right_panel.add(operation_count_label);
-        right_panel.add(estimated_ops_label);
-        right_panel.add(new JLabel("Edge handler: (later)"));
-        right_panel.add(new JLabel("Output format: (later)"));
-
-        // ===== BOTTOM PANEL =====
-        JPanel bottom_panel = new JPanel(new BorderLayout(5,5));
-
-        console_area = new JTextArea(6,40);
+        // ================= CONSOLE =================
+        console_area = new JTextArea();
         console_area.setEditable(false);
         JScrollPane console_scroll = new JScrollPane(console_area);
 
-        JPanel button_panel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JPanel console_button_panel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         run_button = new JButton("Run");
         save_button = new JButton("Save Images");
+        console_button_panel.add(run_button);
+        console_button_panel.add(save_button);
 
-        button_panel.add(run_button);
-        button_panel.add(save_button);
+        JPanel console_panel = new JPanel(new BorderLayout(5, 5));
+        console_panel.setBorder(BorderFactory.createTitledBorder("Console"));
+        console_panel.add(console_scroll, BorderLayout.CENTER);
+        console_panel.add(console_button_panel, BorderLayout.SOUTH);
 
-        bottom_panel.add(new JLabel("Console output:"), BorderLayout.NORTH);
-        bottom_panel.add(console_scroll, BorderLayout.CENTER);
-        bottom_panel.add(button_panel, BorderLayout.SOUTH);
+        JSplitPane vertical_split = new JSplitPane(
+                JSplitPane.VERTICAL_SPLIT,
+                center_panel,
+                console_panel
+        );
+        vertical_split.setResizeWeight(0.6);
+        vertical_split.setDividerLocation(400);
 
-        // ===== ASSEMBLY =====
-        add(left_panel, BorderLayout.WEST);
-        add(right_panel, BorderLayout.CENTER);
-        add(bottom_panel, BorderLayout.SOUTH);
-
-        setPreferredSize(new Dimension(900,600));
+        add(vertical_split, BorderLayout.CENTER);
     }
 
-    // Optional test harness
     public static void main(String[] args) {
+        // Set System Look and Feel for better looking icons
+//        try {
+//            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+//        } catch (Exception e) {}
+
         JFrame frame = new JFrame("Operation Sequence Editor");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.add(new OpSequence());
-        frame.pack();
+        frame.setSize(1000, 700);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 }
