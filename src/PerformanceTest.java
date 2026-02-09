@@ -2,33 +2,44 @@
 // Posted by mota, modified by community. See post 'Timeline' for change history
 // Retrieved 2026-02-08, License - CC BY-SA 4.0
 
+import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
+import java.io.File;
 import java.io.IOException;
-import javax.imageio.ImageIO;
 
 public class PerformanceTest {
 
     public static void main(String[] args) throws IOException {
 
-        BufferedImage hugeImage = ImageIO.read(PerformanceTest.class.getResource("12000X12000.jpg"));
+        BufferedImage hugeImage;
+        File f = null;
 
-        System.out.println("Testing convertTo2DUsingGetRGB:");
-        for (int i = 0; i < 10; i++) {
-            long startTime = System.nanoTime();
-            int[][] result = convertTo2DUsingGetRGB(hugeImage);
-            long endTime = System.nanoTime();
-            System.out.println(String.format("%-2d: %s", (i + 1), toString(endTime - startTime)));
+        try {
+            f = new File("images/rockefeller_center.jpg");
+            hugeImage = ImageIO.read(f);
+
+            System.out.println("Testing convertTo2DUsingGetRGB:");
+            for (int i = 0; i < 10; i++) {
+                long startTime = System.nanoTime();
+                int[][] result = convertTo2DUsingGetRGB(hugeImage);
+                long endTime = System.nanoTime();
+                System.out.println(String.format("%-2d: %s", (i + 1), toString(endTime - startTime)));
+            }
+
+            System.out.println("");
+
+            System.out.println("Testing convertTo2DWithoutUsingGetRGB:");
+            for (int i = 0; i < 10; i++) {
+                long startTime = System.nanoTime();
+                int[][] result = convertTo2DWithoutUsingGetRGB(hugeImage);
+                long endTime = System.nanoTime();
+                System.out.println(String.format("%-2d: %s", (i + 1), toString(endTime - startTime)));
+            }
+
         }
-
-        System.out.println("");
-
-        System.out.println("Testing convertTo2DWithoutUsingGetRGB:");
-        for (int i = 0; i < 10; i++) {
-            long startTime = System.nanoTime();
-            int[][] result = convertTo2DWithoutUsingGetRGB(hugeImage);
-            long endTime = System.nanoTime();
-            System.out.println(String.format("%-2d: %s", (i + 1), toString(endTime - startTime)));
+        catch (IOException e) {
+            System.out.println(e);
         }
     }
 
@@ -47,7 +58,6 @@ public class PerformanceTest {
     }
 
     private static int[][] convertTo2DWithoutUsingGetRGB(BufferedImage image) {
-
         final byte[] pixels = ((DataBufferByte) image.getRaster().getDataBuffer()).getData();
         final int width = image.getWidth();
         final int height = image.getHeight();
@@ -93,7 +103,6 @@ public class PerformanceTest {
         int minutes    = (int) (nanoSecs / 60000000000.0);
         int seconds    = (int) (nanoSecs / 1000000000.0)  - (minutes * 60);
         int millisecs  = (int) ( ((nanoSecs / 1000000000.0) - (seconds + minutes * 60)) * 1000);
-
 
         if (minutes == 0 && seconds == 0)
             return millisecs + "ms";

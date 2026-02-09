@@ -1,13 +1,17 @@
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.util.concurrent.Callable;
 
-public class ImageProcessorThread implements Runnable {
+public class ImageProcessorThread implements Callable<ChunkResult> {
     public BufferedImage input_img, output_img;
     public int width, height;
     public int kernel[][];
     public int kernel_width, kernel_height, kernel_sum, KW2, KH2;
+    private StringBuilder log = new StringBuilder();
+    public int x=-1, y=-1;
 
-    public ImageProcessorThread(BufferedImage input_img_, int kernel_[][]) {
+
+    public ImageProcessorThread(BufferedImage input_img_, int kernel_[][], int x_, int y_) {
         input_img = input_img_;
         width = input_img.getWidth();
         height = input_img.getHeight();
@@ -19,6 +23,9 @@ public class ImageProcessorThread implements Runnable {
 
         KW2 = (kernel_width-1)/2;
         KH2 = (kernel_height-1)/2;
+
+        x = x_;
+        y = y_;
     }
     public int[] get_pixel(int x, int y) {
         int p = input_img.getRGB(x, y);
@@ -80,9 +87,11 @@ public class ImageProcessorThread implements Runnable {
 
         return wps;
     }
+    // Inside ImageProcessorThread.java
     public void kernel_convolution() {
-        for (int x = KW2; x <= width-KW2; x++) {
-            for (int y = KH2; y <= height-KH2; y++) {
+        // Change <= to <
+        for (int x = KW2; x < width - KW2; x++) {
+            for (int y = KH2; y < height - KH2; y++) {
                 int wps[] = weighted_sum(x, y);
                 wps[3] = get_pixel(x, y)[3];
                 set_pixel(x, y, wps);
@@ -90,26 +99,40 @@ public class ImageProcessorThread implements Runnable {
         }
     }
 
-    @Override
     public void run() {
         long startTime = System.currentTimeMillis();
         kernel_convolution();
 
         long stopTime = System.currentTimeMillis();
-        System.out.println("Thread run time: " + (stopTime - startTime) + " ms");
+        log.append("Thread run time: ")
+                .append(stopTime - startTime).append(" ms\n");
+
         int opn = width * height * kernel.length * kernel[0].length;
-        System.out.println("Number of operations: " + opn);
-
-        System.out.println("Image width: " + width);
-        System.out.println("Image height: " + height);
-
-        System.out.println("Kernel width: " + kernel[0].length);
-        System.out.println("Kernel height: " + kernel.length);
-        System.out.println("KW2: " + KW2);
-        System.out.println("KH2: " + KH2);
+        log.append("Number of operations: ").append(opn).append("\n")
+                .append("Image width: ").append(width).append("\n")
+                .append("Image height: ").append(height).append("\n")
+                .append("Kernel width: ").append(kernel[0].length).append("\n")
+                .append("Kernel height: ").append(kernel.length).append("\n")
+                .append("KW2: ").append(KW2).append("\n")
+                .append("KH2: ").append(KH2).append("\n");
     }
 
-    public BufferedImage output() {
-        return output_img.getSubimage(KW2, KH2, width-KW2, height-KW2);
+    public String getLog() {
+        return log.toString();
     }
+
+    @Override
+    public ChunkResult call() {
+        run();
+        // Calculate the size of the processed area
+        int processedWidth = width - (2 * KW2);
+        int processedHeight = height - (2 * KH2);
+
+        return new ChunkResult(
+                output_img.getSubimage(KW2, KH2, processedWidth, processedHeight),
+                x,
+                y
+        );
+    }
+
 }
