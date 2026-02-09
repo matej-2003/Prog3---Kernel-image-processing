@@ -3,7 +3,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -16,6 +15,13 @@ public class ImageProcessor {
 	public static File f = null;
 	public static int width, height;
 	public static int[][] blur_kernel, gaussian_kernel, sharpen_kernel, emboss_kernel, outline_kernel, sobel_x, sobel_y, indentiy_kernel, edge_kernel;
+	public static int[][] kernel;
+
+	@FunctionalInterface
+	public interface EdgeHandler {
+		int[] get(int x, int y);
+	}
+	
 	public static void init_kernels() {
 		blur_kernel = new int[][] {
 				{1, 1, 1},
@@ -85,8 +91,6 @@ public class ImageProcessor {
 
 		width = input_img.getWidth();
 		height = input_img.getHeight();
-
-		output_img = new BufferedImage(width, height, input_img.getType());
 	}
 	public static void save_image(BufferedImage out, String filename) {
 		try {
@@ -121,10 +125,6 @@ public class ImageProcessor {
 		while (y >= height) y = 2 * height - y;
 
 		return new int[] {x, y};
-	}
-	@FunctionalInterface
-	public interface EdgeHandler {
-		int[] get(int x, int y);
 	}
 	public static int[] get_pixel(int x, int y) {
 		int p = input_img.getRGB(x, y);
@@ -218,37 +218,22 @@ public class ImageProcessor {
 	public static void print_pixel(int[] p) {
 		System.out.println("(r=" + p[0] + ", g=" + p[1] + ", b=" + p[2]+ ", a=" + p[3] + ")");
 	}
+	
+	
 	public static void linarExecution() {
-		// load_image("./data/dice.png");
-		load_image("./data/mona lisa.jpg");
-		init_kernels();
-
-		int kernel[][] = {
-				{1, 1, 1, 1, 1, 1, 1},
-				{1, 1, 1, 1, 1, 1, 1},
-				{1, 1, 1, 1, 1, 1, 1},
-				{1, 1, 1, 1, 1, 1, 1},
-				{1, 1, 1, 1, 1, 1, 1},
-				{1, 1, 1, 1, 1, 1, 1},
-				{1, 1, 1, 1, 1, 1, 1},
-		};
-
 		long startTime = System.currentTimeMillis();
+		System.out.println("Linear execution: ");
 
-
+		kernel_convolution(kernel, ImageProcessor::get_edge_extend);
+		
 		long stopTime = System.currentTimeMillis();
 		System.out.println("Run time: " + (stopTime - startTime) + " ms");
-		int opn = input_img.getWidth() * input_img.getHeight() * kernel.length * kernel[0].length;
-		System.out.println("Number of operations: " + opn);
-
-		System.out.println("Image width: " + input_img.getWidth());
-		System.out.println("Image height: " + input_img.getHeight());
-
-		System.out.println("Kernel width: " + kernel[0].length);
-		System.out.println("Kernel height: " + kernel.length);
-
-		save_image("output.png");
+		save_image("line_output.png");
 	}
+	
+
+	// parallel function
+
 	public static BufferedImage with_padding(BufferedImage img, int n) {
 		BufferedImage out = new BufferedImage(img.getWidth() + n, img.getHeight() + n, img.getType());
 
@@ -270,9 +255,9 @@ public class ImageProcessor {
 		}
 		if (r > 0) chunks[n-1][1] += r;
 
-		for (int[] f: chunks) {
-			System.out.println(Arrays.toString(f));
-		}
+		// for (int[] f: chunks) {
+		// 	System.out.println(Arrays.toString(f));
+		// }
 
 		return chunks;
 	}
@@ -306,16 +291,10 @@ public class ImageProcessor {
 		}
 		return new int[] {b, a};
 	}
+	
+	
 	public static void parallelExecution(int thread_number) {
-		int kernel[][] = {
-				{1, 1, 1, 1, 1, 1, 1},
-				{1, 1, 1, 1, 1, 1, 1},
-				{1, 1, 1, 1, 1, 1, 1},
-				{1, 1, 1, 1, 1, 1, 1},
-				{1, 1, 1, 1, 1, 1, 1},
-				{1, 1, 1, 1, 1, 1, 1},
-				{1, 1, 1, 1, 1, 1, 1},
-		};
+		System.out.println("Parallel execution: " + thread_number + " threads");
 
 		int chunk_sizes[] = find_chunk_sizes(thread_number);
 		int x_chunk_number = chunk_sizes[0];
@@ -324,8 +303,6 @@ public class ImageProcessor {
 		int width_chunks[][] = make_chunks(width, x_chunk_number);
 		int height_chunks[][] = make_chunks(height, y_chunk_number);
 
-		int chunk_width = (width / x_chunk_number);
-		int chunk_height = (height / y_chunk_number);
 		int kernel_width = kernel[0].length;
 		int kernel_height = kernel.length;
 		int KW2 = (kernel_width - 1) / 2;
@@ -340,6 +317,10 @@ public class ImageProcessor {
 				padded_input_image.setRGB(px, py, input_img.getRGB(coords[0], coords[1]));
 			}
 		}
+
+
+		// this is expensive
+		long startTime = System.currentTimeMillis();
 
 		ExecutorService executor = Executors.newFixedThreadPool(thread_number);
 		List<Future<ChunkResult>> futures = new ArrayList<>();
@@ -380,18 +361,45 @@ public class ImageProcessor {
 			} catch (Exception e) { e.printStackTrace(); }
 		}
 		g.dispose();
-		save_image("output.png");
 
+		long stopTime = System.currentTimeMillis();
+		System.out.println("Run time: " + (stopTime - startTime) + " ms");
+		
+		save_image("para_output.png");
 	}
 
 	public static void main(String[] args) {
-		load_image("./data/mona lisa.jpg");
-//		load_image("./images/rockefeller_center.jpg");
+		// load_image("./data/mona lisa.jpg");
+		load_image("./images/rockefeller_center.jpg");
+		init_kernels();
+
+//		kernel = new int[][] {
+//				{1, 1, 1, 1, 1, 1, 1},
+//				{1, 1, 1, 1, 1, 1, 1},
+//				{1, 1, 1, 1, 1, 1, 1},
+//				{1, 1, 1, 1, 1, 1, 1},
+//				{1, 1, 1, 1, 1, 1, 1},
+//				{1, 1, 1, 1, 1, 1, 1},
+//				{1, 1, 1, 1, 1, 1, 1},
+//		};
+		kernel = emboss_kernel;
+
 		System.out.println("Image width: " + input_img.getWidth());
 		System.out.println("Image height: " + input_img.getHeight());
+		System.out.println("Kernel width: " + kernel[0].length);
+		System.out.println("Kernel height: " + kernel.length);
+		int opn = input_img.getWidth() * input_img.getHeight() * kernel.length * kernel[0].length;
+		System.out.println("Number of operations: " + opn);
+		
 
-		int thread_numner = Runtime.getRuntime().availableProcessors();
-		System.out.println(thread_numner);
+		// linear execution
+		output_img = new BufferedImage(width, height, input_img.getType());
+		linarExecution();
+
+		// parallel execution
+		output_img = new BufferedImage(width, height, input_img.getType());
+		// int thread_numner = Runtime.getRuntime().availableProcessors();
+		// System.out.println(thread_numner);
 		parallelExecution(60);
 	}
 }
