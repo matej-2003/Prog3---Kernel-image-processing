@@ -65,7 +65,6 @@ public class ImageProcessor {
 				{1, 2, 1},
 		};
 
-
 		indentiy_kernel = new int[][] {
 				{0, 0, 0},
 				{0, 1, 0},

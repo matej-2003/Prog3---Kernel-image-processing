@@ -261,17 +261,27 @@ public class OpSequence extends JPanel {
 		settings_kernel_select.addActionListener(settingsUpdater);
 		settings_edge_select.addActionListener(settingsUpdater);
 
-		// Apply similar logic to your Custom Kernel DocumentListener
 		custom_kernel_area.getDocument().addDocumentListener(new DocumentListener() {
-			public void insertUpdate(DocumentEvent e) { save(); }
-			public void removeUpdate(DocumentEvent e) { save(); }
-			public void changedUpdate(DocumentEvent e) { save(); }
+			public void insertUpdate(DocumentEvent e) { checkCustom(); }
+			public void removeUpdate(DocumentEvent e) { checkCustom(); }
+			public void changedUpdate(DocumentEvent e) { checkCustom(); }
 			
-			private void save() {
-				if (isUpdating) return; // DON'T SAVE IF WE ARE JUST LOADING
+			private void checkCustom() {
+				// 1. If we are currently loading a row from the table, do nothing
+				if (isUpdating) return; 
+
 				int row = operation_table.getSelectedRow();
 				if (row != -1) {
+					// 2. Update the custom_kernel string in our object
 					operations.get(row).custom_kernel = custom_kernel_area.getText();
+
+					// 3. If the user typed something, switch the dropdown to "Custom"
+					// We check !isEmpty to avoid switching if the field was just cleared
+					if (!custom_kernel_area.getText().trim().isEmpty()) {
+						if (!settings_kernel_select.getSelectedItem().equals("Custom")) {
+							settings_kernel_select.setSelectedItem("Custom");
+						}
+					}
 				}
 			}
 		});
@@ -284,28 +294,6 @@ public class OpSequence extends JPanel {
 			}
 		});
 	}
-
-	// private void updateSettingsFromSelection() {
-	// 	int selectedRow = operation_table.getSelectedRow();
-		
-	// 	if (selectedRow != -1) {
-	// 		// Get the operation from your ArrayList
-	// 		Operation op = operations.get(selectedRow);
-			
-	// 		// Update Settings Panel
-	// 		settings_kernel_select.setSelectedItem(op.kernel);
-	// 		settings_edge_select.setSelectedItem(op.edge);
-	// 		custom_kernel_area.setText(op.custom_kernel);
-			
-	// 		// Update Info Panel (Example of dynamic info)
-	// 		operation_count_label.setText("Selected Operation: #" + (selectedRow + 1));
-	// 		estimated_ops_label.setText("Kernel Type: " + op.kernel);
-	// 	} else {
-	// 		// Clear settings if nothing is selected
-	// 		custom_kernel_area.setText("");
-	// 		operation_count_label.setText("Operations in sequence: " + operations.size());
-	// 	}
-	// }
 
 	private void updateSettingsFromSelection() {
 		int row = operation_table.getSelectedRow();
