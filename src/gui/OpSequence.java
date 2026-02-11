@@ -1,4 +1,8 @@
+package gui;
+
 import java.awt.*;
+import java.util.ArrayList;
+import javax.management.openmbean.OpenDataException;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
@@ -7,38 +11,39 @@ public class OpSequence extends JPanel {
 
 	public JTable operation_table;
 	public DefaultTableModel table_model;
+	public JButton add_button, remove_button, up_button, down_button;
 
-	public JButton add_button;
-	public JButton remove_button;
-	public JButton up_button;
-	public JButton down_button;
-
-	// Toolbar selectors (for adding)
-	public JComboBox<String> toolbar_kernel_select;
-	public JComboBox<String> toolbar_edge_select;
+	public JComboBox<String> toolbar_kernel_select, toolbar_edge_select;
+	public JComboBox<String> settings_kernel_select, settings_edge_select;
+	public JLabel operation_count_label, estimated_ops_label;
+	public JTextArea custom_kernel_area, console_area;
+	public JButton run_button, save_button;
+	public String kernel_list[] = {"Identity", "Blur", "Gaussian", "Sharpen", "Emboss", "Outline", "Edge", "Sobel X", "Sobel Y", "Custom"};
+	public String edge_list[] = {"Zero padding", "Clamp", "Wrap", "Mirror"};
+	public ArrayList<Operation> operations;
 	
-	// Settings selectors (for viewing/editing)
-	public JComboBox<String> settings_kernel_select;
-	public JComboBox<String> settings_edge_select;
-	public JTextArea custom_kernel_area;
-
-	public JLabel operation_count_label;
-	public JLabel estimated_ops_label;
-
-	public JTextArea console_area;
-	public JButton run_button;
-	public JButton save_button;
-
-	public String kernel_list[] = {
-			"Identity", "Blur", "Gaussian", "Sharpen",
-			"Emboss", "Outline", "Edge", "Sobel X", "Sobel Y", "Custom"
-	};
-
-	public String edge_list[] = {
-			"Zero padding", "Clamp", "Wrap", "Mirror"
-	};
 
 	public OpSequence() {
+		operations = new ArrayList<Operation>();
+		init_components();
+		init_actions();
+	}
+
+	private void reindexTable() {
+		for (int i = 0; i < table_model.getRowCount(); i++) {
+			table_model.setValueAt(i + 1, i, 0);
+		}
+	}
+
+	private void updateOperationCount() {
+		operation_count_label.setText("Operations in sequence: " + table_model.getRowCount());
+	}
+
+	public void load_settings() {
+		
+	}
+
+	public void init_components() {
 		setLayout(new BorderLayout(5, 5));
 
 		// Initialize Table
@@ -55,10 +60,10 @@ public class OpSequence extends JPanel {
 		// Initialize UI Components
 		toolbar_kernel_select = new JComboBox<>(kernel_list);
 		toolbar_edge_select = new JComboBox<>(edge_list);
-		
+
 		settings_kernel_select = new JComboBox<>(kernel_list);
 		settings_edge_select = new JComboBox<>(edge_list);
-		
+
 		custom_kernel_area = new JTextArea(10, 12);
 		operation_count_label = new JLabel("Operations in sequence: 0");
 		estimated_ops_label = new JLabel("Estimated total operations: 0");
@@ -76,7 +81,7 @@ public class OpSequence extends JPanel {
 		remove_button = new JButton(new ImageIcon("./icons/cross.png"));
 		up_button = new JButton(new ImageIcon("./icons/arrow-up.png"));
 		down_button = new JButton(new ImageIcon("./icons/arrow-down.png"));
-		
+
 		// Set buttons to be compact since they have icons
 		add_button.setMargin(new Insets(2,2,2,2));
 		remove_button.setMargin(new Insets(2,2,2,2));
@@ -117,8 +122,8 @@ public class OpSequence extends JPanel {
 		gbc.gridx = 0; gbc.gridy = 2; gbc.weightx = 0;
 		gbc.anchor = GridBagConstraints.NORTHWEST;
 		settings_panel.add(new JLabel("Custom kernel:"), gbc);
-		
-		gbc.gridx = 1; gbc.weightx = 1.0; gbc.weighty = 1.0; 
+
+		gbc.gridx = 1; gbc.weightx = 1.0; gbc.weighty = 1.0;
 		gbc.fill = GridBagConstraints.BOTH;
 		settings_panel.add(new JScrollPane(custom_kernel_area), gbc);
 
@@ -154,14 +159,14 @@ public class OpSequence extends JPanel {
 		JSplitPane vertical_split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, center_panel, console_panel);
 		vertical_split.setDividerLocation(400);
 		add(vertical_split, BorderLayout.CENTER);
-
-		// ================= ACTION LISTENERS =================
-
+	}
+	
+	public void init_actions() {
 		// ADD
 		add_button.addActionListener(e -> {
 			table_model.addRow(new Object[]{
-					table_model.getRowCount() + 1, 
-					toolbar_kernel_select.getSelectedItem(), 
+					table_model.getRowCount() + 1,
+					toolbar_kernel_select.getSelectedItem(),
 					toolbar_edge_select.getSelectedItem()
 			});
 			updateOperationCount();
@@ -196,16 +201,10 @@ public class OpSequence extends JPanel {
 				reindexTable();
 			}
 		});
-	}
 
-	private void reindexTable() {
-		for (int i = 0; i < table_model.getRowCount(); i++) {
-			table_model.setValueAt(i + 1, i, 0);
-		}
-	}
-
-	private void updateOperationCount() {
-		operation_count_label.setText("Operations in sequence: " + table_model.getRowCount());
+		table_model.addActionListener(e -> {
+			
+		});
 	}
 
 	public static void main(String[] args) {
