@@ -1,14 +1,16 @@
 package gui;
 
 import java.awt.*;
+import java.awt.event.*;
 import java.util.ArrayList;
-import javax.management.openmbean.OpenDataException;
+import java.util.Collections;
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 
 public class OpSequence extends JPanel {
-
 	public JTable operation_table;
 	public DefaultTableModel table_model;
 	public JButton add_button, remove_button, up_button, down_button;
@@ -18,15 +20,23 @@ public class OpSequence extends JPanel {
 	public JLabel operation_count_label, estimated_ops_label;
 	public JTextArea custom_kernel_area, console_area;
 	public JButton run_button, save_button;
+
 	public String kernel_list[] = {"Identity", "Blur", "Gaussian", "Sharpen", "Emboss", "Outline", "Edge", "Sobel X", "Sobel Y", "Custom"};
 	public String edge_list[] = {"Zero padding", "Clamp", "Wrap", "Mirror"};
-	public ArrayList<Operation> operations;
-	
+
+	// Ključni seznam operacij
+	private ArrayList<Operation> operations;
+	private boolean isUpdating = false; // Flag za preprečevanje neskončnih zank pri posodabljanju GUI
 
 	public OpSequence() {
-		operations = new ArrayList<Operation>();
+		operations = new ArrayList<>();
 		init_components();
 		init_actions();
+	}
+
+	// Metoda, ki jo potrebuje drug razred
+	public ArrayList<Operation> getOperations() {
+		return operations;
 	}
 
 	private void reindexTable() {
@@ -36,31 +46,58 @@ public class OpSequence extends JPanel {
 	}
 
 	private void updateOperationCount() {
-		operation_count_label.setText("Operations in sequence: " + table_model.getRowCount());
+		operation_count_label.setText("Operations in sequence: " + operations.size());
 	}
 
-	public void load_settings() {
-		
+	/**
+	 * Naloži nastavitve izbrane operacije v desni panel
+	 */
+	private void loadSettingsToPanel() {
+		int row = operation_table.getSelectedRow();
+		if (row == -1) return;
+
+		isUpdating = true; // Onemogoči sprožanje listenerjev med nalaganjem
+		Operation op = operations.get(row);
+		settings_kernel_select.setSelectedItem(op.kernel);
+		settings_edge_select.setSelectedItem(op.edge);
+		custom_kernel_area.setText(op.custom_kernel);
+		isUpdating = false;
+	}
+
+	/**
+	 * Posodobi izbrano operacijo v listu in tabeli, ko uporabnik spremeni nastavitev
+	 */
+	private void updateSelectedOperation() {
+		if (isUpdating) return;
+		int row = operation_table.getSelectedRow();
+		if (row == -1) return;
+
+		Operation op = operations.get(row);
+		op.kernel = (String) settings_kernel_select.getSelectedItem();
+		op.edge = (String) settings_edge_select.getSelectedItem();
+		op.custom_kernel = custom_kernel_area.getText();
+
+		// Posodobi prikaz v tabeli
+		table_model.setValueAt(op.kernel, row, 1);
+		table_model.setValueAt(op.edge, row, 2);
 	}
 
 	public void init_components() {
 		setLayout(new BorderLayout(5, 5));
 
-		// Initialize Table
-		table_model = new DefaultTableModel(
-				new Object[]{"#", "Kernel", "Edge handling"}, 0
-		);
+		table_model = new DefaultTableModel(new Object[]{"#", "Kernel", "Edge handling"}, 0) {
+			@Override
+			public boolean isCellEditable(int row, int column) { return false; }
+		};
 		operation_table = new JTable(table_model);
+		operation_table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-		// Column width for "#"
 		TableColumn idColumn = operation_table.getColumnModel().getColumn(0);
 		idColumn.setMaxWidth(40);
 		idColumn.setPreferredWidth(30);
 
-		// Initialize UI Components
 		toolbar_kernel_select = new JComboBox<>(kernel_list);
 		toolbar_edge_select = new JComboBox<>(edge_list);
-
 		settings_kernel_select = new JComboBox<>(kernel_list);
 		settings_edge_select = new JComboBox<>(edge_list);
 
@@ -70,23 +107,16 @@ public class OpSequence extends JPanel {
 
 		JPanel center_panel = new JPanel(new GridLayout(1, 2, 5, 5));
 
-		// ================= LEFT PANEL =================
+		// LEFT PANEL
 		JPanel left_panel = new JPanel(new BorderLayout(6, 5));
 		left_panel.setBorder(BorderFactory.createTitledBorder("Operation Sequence"));
 		left_panel.add(new JScrollPane(operation_table), BorderLayout.CENTER);
 
-		// TOOLBAR
 		JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
 		add_button = new JButton(new ImageIcon("./icons/plus.png"));
 		remove_button = new JButton(new ImageIcon("./icons/cross.png"));
 		up_button = new JButton(new ImageIcon("./icons/arrow-up.png"));
 		down_button = new JButton(new ImageIcon("./icons/arrow-down.png"));
-
-		// Set buttons to be compact since they have icons
-		add_button.setMargin(new Insets(2,2,2,2));
-		remove_button.setMargin(new Insets(2,2,2,2));
-		up_button.setMargin(new Insets(2,2,2,2));
-		down_button.setMargin(new Insets(2,2,2,2));
 
 		toolbar.add(toolbar_kernel_select);
 		toolbar.add(toolbar_edge_select);
@@ -94,10 +124,9 @@ public class OpSequence extends JPanel {
 		toolbar.add(remove_button);
 		toolbar.add(up_button);
 		toolbar.add(down_button);
-
 		left_panel.add(toolbar, BorderLayout.SOUTH);
 
-		// ================= RIGHT PANEL =================
+		// RIGHT PANEL
 		JPanel right_panel = new JPanel(new BorderLayout(5, 5));
 		right_panel.setBorder(BorderFactory.createTitledBorder("Settings & Info"));
 
@@ -106,19 +135,16 @@ public class OpSequence extends JPanel {
 		gbc.insets = new Insets(4, 4, 4, 4);
 		gbc.fill = GridBagConstraints.HORIZONTAL;
 
-		// Row 0: Kernel Select
 		gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0;
 		settings_panel.add(new JLabel("Kernel:"), gbc);
 		gbc.gridx = 1; gbc.weightx = 1.0;
 		settings_panel.add(settings_kernel_select, gbc);
 
-		// Row 1: Edge Select
 		gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 0;
 		settings_panel.add(new JLabel("Edge handling:"), gbc);
 		gbc.gridx = 1; gbc.weightx = 1.0;
 		settings_panel.add(settings_edge_select, gbc);
 
-		// Row 2: Custom Kernel Area
 		gbc.gridx = 0; gbc.gridy = 2; gbc.weightx = 0;
 		gbc.anchor = GridBagConstraints.NORTHWEST;
 		settings_panel.add(new JLabel("Custom kernel:"), gbc);
@@ -129,7 +155,6 @@ public class OpSequence extends JPanel {
 
 		JPanel info_panel = new JPanel();
 		info_panel.setLayout(new BoxLayout(info_panel, BoxLayout.Y_AXIS));
-		info_panel.setBorder(BorderFactory.createEmptyBorder(10, 5, 5, 5));
 		info_panel.add(operation_count_label);
 		info_panel.add(Box.createVerticalStrut(5));
 		info_panel.add(estimated_ops_label);
@@ -142,7 +167,7 @@ public class OpSequence extends JPanel {
 		center_panel.add(left_panel);
 		center_panel.add(right_panel);
 
-		// ================= CONSOLE =================
+		// CONSOLE
 		console_area = new JTextArea();
 		console_area.setEditable(false);
 		JPanel console_button_panel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
@@ -160,15 +185,20 @@ public class OpSequence extends JPanel {
 		vertical_split.setDividerLocation(400);
 		add(vertical_split, BorderLayout.CENTER);
 	}
-	
+
 	public void init_actions() {
-		// ADD
+		// Inside add_button listener
 		add_button.addActionListener(e -> {
-			table_model.addRow(new Object[]{
-					table_model.getRowCount() + 1,
-					toolbar_kernel_select.getSelectedItem(),
-					toolbar_edge_select.getSelectedItem()
-			});
+			String k = (String) toolbar_kernel_select.getSelectedItem();
+			String ed = (String) toolbar_edge_select.getSelectedItem();
+			
+			operations.add(new Operation(k, ed, ""));
+			table_model.addRow(new Object[]{operations.size(), k, ed});
+			
+			// ADD THIS: Auto-select the new row
+			int lastRow = table_model.getRowCount() - 1;
+			operation_table.setRowSelectionInterval(lastRow, lastRow);
+			
 			updateOperationCount();
 		});
 
@@ -176,6 +206,7 @@ public class OpSequence extends JPanel {
 		remove_button.addActionListener(e -> {
 			int row = operation_table.getSelectedRow();
 			if (row != -1) {
+				operations.remove(row);
 				table_model.removeRow(row);
 				reindexTable();
 				updateOperationCount();
@@ -186,6 +217,7 @@ public class OpSequence extends JPanel {
 		up_button.addActionListener(e -> {
 			int row = operation_table.getSelectedRow();
 			if (row > 0) {
+				Collections.swap(operations, row, row - 1);
 				table_model.moveRow(row, row, row - 1);
 				operation_table.setRowSelectionInterval(row - 1, row - 1);
 				reindexTable();
@@ -195,16 +227,100 @@ public class OpSequence extends JPanel {
 		// DOWN
 		down_button.addActionListener(e -> {
 			int row = operation_table.getSelectedRow();
-			if (row != -1 && row < table_model.getRowCount() - 1) {
+			if (row != -1 && row < operations.size() - 1) {
+				Collections.swap(operations, row, row + 1);
 				table_model.moveRow(row, row, row + 1);
 				operation_table.setRowSelectionInterval(row + 1, row + 1);
 				reindexTable();
 			}
 		});
 
-		table_model.addActionListener(e -> {
-			
+		// Klik na vrstico v tabeli -> naloži nastavitve na desno
+		operation_table.getSelectionModel().addListSelectionListener(e -> {
+			if (!e.getValueIsAdjusting()) {
+				loadSettingsToPanel();
+			}
 		});
+
+		ActionListener settingsUpdater = e -> {
+			// IF WE ARE CURRENTLY LOADING A ROW, DO NOT OVERWRITE DATA
+			if (isUpdating) return; 
+
+			int row = operation_table.getSelectedRow();
+			if (row != -1) {
+				Operation op = operations.get(row);
+				op.kernel = (String) settings_kernel_select.getSelectedItem();
+				op.edge = (String) settings_edge_select.getSelectedItem();
+				
+				table_model.setValueAt(op.kernel, row, 1);
+				table_model.setValueAt(op.edge, row, 2);
+			}
+		};
+
+		// Apply to dropdowns
+		settings_kernel_select.addActionListener(settingsUpdater);
+		settings_edge_select.addActionListener(settingsUpdater);
+
+		// Apply similar logic to your Custom Kernel DocumentListener
+		custom_kernel_area.getDocument().addDocumentListener(new DocumentListener() {
+			public void insertUpdate(DocumentEvent e) { save(); }
+			public void removeUpdate(DocumentEvent e) { save(); }
+			public void changedUpdate(DocumentEvent e) { save(); }
+			
+			private void save() {
+				if (isUpdating) return; // DON'T SAVE IF WE ARE JUST LOADING
+				int row = operation_table.getSelectedRow();
+				if (row != -1) {
+					operations.get(row).custom_kernel = custom_kernel_area.getText();
+				}
+			}
+		});
+
+		
+		// Inside init_actions()
+		operation_table.getSelectionModel().addListSelectionListener(e -> {
+			if (!e.getValueIsAdjusting()) {
+				updateSettingsFromSelection();
+			}
+		});
+	}
+
+	// private void updateSettingsFromSelection() {
+	// 	int selectedRow = operation_table.getSelectedRow();
+		
+	// 	if (selectedRow != -1) {
+	// 		// Get the operation from your ArrayList
+	// 		Operation op = operations.get(selectedRow);
+			
+	// 		// Update Settings Panel
+	// 		settings_kernel_select.setSelectedItem(op.kernel);
+	// 		settings_edge_select.setSelectedItem(op.edge);
+	// 		custom_kernel_area.setText(op.custom_kernel);
+			
+	// 		// Update Info Panel (Example of dynamic info)
+	// 		operation_count_label.setText("Selected Operation: #" + (selectedRow + 1));
+	// 		estimated_ops_label.setText("Kernel Type: " + op.kernel);
+	// 	} else {
+	// 		// Clear settings if nothing is selected
+	// 		custom_kernel_area.setText("");
+	// 		operation_count_label.setText("Operations in sequence: " + operations.size());
+	// 	}
+	// }
+
+	private void updateSettingsFromSelection() {
+		int row = operation_table.getSelectedRow();
+		if (row == -1) return;
+
+		// 1. SET FLAG TO TRUE
+		isUpdating = true; 
+
+		Operation op = operations.get(row);
+		settings_kernel_select.setSelectedItem(op.kernel);
+		settings_edge_select.setSelectedItem(op.edge);
+		custom_kernel_area.setText(op.custom_kernel);
+
+		// 2. SET FLAG TO FALSE
+		isUpdating = false; 
 	}
 
 	public static void main(String[] args) {
