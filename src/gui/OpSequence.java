@@ -13,8 +13,13 @@ public class OpSequence extends JPanel {
 	public JButton up_button;
 	public JButton down_button;
 
-	public JComboBox<String> kernel_select;
-	public JComboBox<String> edge_select;
+	// Toolbar selectors (for adding)
+	public JComboBox<String> toolbar_kernel_select;
+	public JComboBox<String> toolbar_edge_select;
+	
+	// Settings selectors (for viewing/editing)
+	public JComboBox<String> settings_kernel_select;
+	public JComboBox<String> settings_edge_select;
 	public JTextArea custom_kernel_area;
 
 	public JLabel operation_count_label;
@@ -47,10 +52,14 @@ public class OpSequence extends JPanel {
 		idColumn.setMaxWidth(40);
 		idColumn.setPreferredWidth(30);
 
-		// UI Components
-		kernel_select = new JComboBox<>(kernel_list);
-		edge_select = new JComboBox<>(edge_list);
-		custom_kernel_area = new JTextArea(13, 12);
+		// Initialize UI Components
+		toolbar_kernel_select = new JComboBox<>(kernel_list);
+		toolbar_edge_select = new JComboBox<>(edge_list);
+		
+		settings_kernel_select = new JComboBox<>(kernel_list);
+		settings_edge_select = new JComboBox<>(edge_list);
+		
+		custom_kernel_area = new JTextArea(10, 12);
 		operation_count_label = new JLabel("Operations in sequence: 0");
 		estimated_ops_label = new JLabel("Estimated total operations: 0");
 
@@ -67,14 +76,17 @@ public class OpSequence extends JPanel {
 		remove_button = new JButton(new ImageIcon("./icons/cross.png"));
 		up_button = new JButton(new ImageIcon("./icons/arrow-up.png"));
 		down_button = new JButton(new ImageIcon("./icons/arrow-down.png"));
+		
+		// Set buttons to be compact since they have icons
+		add_button.setMargin(new Insets(2,2,2,2));
+		remove_button.setMargin(new Insets(2,2,2,2));
+		up_button.setMargin(new Insets(2,2,2,2));
+		down_button.setMargin(new Insets(2,2,2,2));
 
-		// toolbar.add(new JLabel("Kernel:"));
-		toolbar.add(kernel_select);
-		// toolbar.add(new JLabel("Edge:"));
-		toolbar.add(edge_select);
+		toolbar.add(toolbar_kernel_select);
+		toolbar.add(toolbar_edge_select);
 		toolbar.add(add_button);
 		toolbar.add(remove_button);
-		// toolbar.add(new JSeparator(SwingConstants.VERTICAL));
 		toolbar.add(up_button);
 		toolbar.add(down_button);
 
@@ -87,14 +99,34 @@ public class OpSequence extends JPanel {
 		JPanel settings_panel = new JPanel(new GridBagLayout());
 		GridBagConstraints gbc = new GridBagConstraints();
 		gbc.insets = new Insets(4, 4, 4, 4);
-		gbc.gridx = 0; gbc.gridy = 0;
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+
+		// Row 0: Kernel Select
+		gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0;
+		settings_panel.add(new JLabel("Kernel:"), gbc);
+		gbc.gridx = 1; gbc.weightx = 1.0;
+		settings_panel.add(settings_kernel_select, gbc);
+
+		// Row 1: Edge Select
+		gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 0;
+		settings_panel.add(new JLabel("Edge handling:"), gbc);
+		gbc.gridx = 1; gbc.weightx = 1.0;
+		settings_panel.add(settings_edge_select, gbc);
+
+		// Row 2: Custom Kernel Area
+		gbc.gridx = 0; gbc.gridy = 2; gbc.weightx = 0;
+		gbc.anchor = GridBagConstraints.NORTHWEST;
 		settings_panel.add(new JLabel("Custom kernel:"), gbc);
-		gbc.gridx = 1; gbc.weightx = 1.0; gbc.weighty = 1.0; gbc.fill = GridBagConstraints.BOTH;
+		
+		gbc.gridx = 1; gbc.weightx = 1.0; gbc.weighty = 1.0; 
+		gbc.fill = GridBagConstraints.BOTH;
 		settings_panel.add(new JScrollPane(custom_kernel_area), gbc);
 
 		JPanel info_panel = new JPanel();
 		info_panel.setLayout(new BoxLayout(info_panel, BoxLayout.Y_AXIS));
+		info_panel.setBorder(BorderFactory.createEmptyBorder(10, 5, 5, 5));
 		info_panel.add(operation_count_label);
+		info_panel.add(Box.createVerticalStrut(5));
 		info_panel.add(estimated_ops_label);
 
 		JPanel right_top = new JPanel(new BorderLayout(5, 5));
@@ -127,7 +159,11 @@ public class OpSequence extends JPanel {
 
 		// ADD
 		add_button.addActionListener(e -> {
-			table_model.addRow(new Object[]{table_model.getRowCount() + 1, kernel_select.getSelectedItem(), edge_select.getSelectedItem()});
+			table_model.addRow(new Object[]{
+					table_model.getRowCount() + 1, 
+					toolbar_kernel_select.getSelectedItem(), 
+					toolbar_edge_select.getSelectedItem()
+			});
 			updateOperationCount();
 		});
 
@@ -173,7 +209,6 @@ public class OpSequence extends JPanel {
 	}
 
 	public static void main(String[] args) {
-//        try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); } catch (Exception e) {}
 		JFrame frame = new JFrame("Operation Sequence Editor");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.add(new OpSequence());
