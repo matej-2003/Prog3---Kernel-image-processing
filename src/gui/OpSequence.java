@@ -64,24 +64,6 @@ public class OpSequence extends JPanel {
 		isUpdating = false;
 	}
 
-	/**
-	 * Posodobi izbrano operacijo v listu in tabeli, ko uporabnik spremeni nastavitev
-	 */
-	private void updateSelectedOperation() {
-		if (isUpdating) return;
-		int row = operation_table.getSelectedRow();
-		if (row == -1) return;
-
-		Operation op = operations.get(row);
-		op.kernel = (String) settings_kernel_select.getSelectedItem();
-		op.edge = (String) settings_edge_select.getSelectedItem();
-		op.custom_kernel = custom_kernel_area.getText();
-
-		// Posodobi prikaz v tabeli
-		table_model.setValueAt(op.kernel, row, 1);
-		table_model.setValueAt(op.edge, row, 2);
-	}
-
 	public void init_components() {
 		setLayout(new BorderLayout(5, 5));
 
@@ -168,6 +150,7 @@ public class OpSequence extends JPanel {
 		center_panel.add(right_panel);
 
 		// CONSOLE
+		/*
 		console_area = new JTextArea();
 		console_area.setEditable(false);
 		JPanel console_button_panel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
@@ -184,6 +167,9 @@ public class OpSequence extends JPanel {
 		JSplitPane vertical_split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, center_panel, console_panel);
 		vertical_split.setDividerLocation(400);
 		add(vertical_split, BorderLayout.CENTER);
+		*/
+
+		add(center_panel, BorderLayout.CENTER);
 	}
 
 	public void init_actions() {

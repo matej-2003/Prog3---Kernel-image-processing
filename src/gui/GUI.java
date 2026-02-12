@@ -22,7 +22,9 @@ public class GUI {
 	
 	public static JLabel width_label, height_label, pixel_count_label;
 	public static JTextField time_field;
-	public static JButton run_button, edit_sequence_button;
+	public static JButton run_button, edit_sequence_button, save_button;
+
+	public static JTextArea console_area;
 
 	// This is the editor class we built before
 	public static OpSequence editor_panel;
@@ -52,7 +54,8 @@ public class GUI {
 	}
 
 	public static void create_single_panel() {
-		single_panel = new JPanel(new BorderLayout(10, 10));
+		single_panel = new JPanel(new BorderLayout(5, 5));
+		JPanel center_panel = new JPanel(new BorderLayout(10, 10));
 
 		// ===== CENTER: Images =====
 		JPanel image_container = new JPanel(new GridLayout(1, 2, 10, 10));
@@ -113,11 +116,30 @@ public class GUI {
 		bottom_panel.add(stats_panel, BorderLayout.WEST);
 		bottom_panel.add(run_button, BorderLayout.EAST);
 
-		// Assembly
-		single_panel.add(image_container, BorderLayout.CENTER);
-		single_panel.add(side_panel, BorderLayout.EAST);
-		single_panel.add(bottom_panel, BorderLayout.SOUTH);
 
+		// console
+		console_area = new JTextArea();
+		console_area.setEditable(false);
+		JPanel console_button_panel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+		run_button = new JButton("Run");
+		save_button = new JButton("Save Images");
+		console_button_panel.add(run_button);
+		console_button_panel.add(save_button);
+
+		JPanel console_panel = new JPanel(new BorderLayout(5, 5));
+		console_panel.setBorder(BorderFactory.createTitledBorder("Console"));
+		console_panel.add(new JScrollPane(console_area), BorderLayout.CENTER);
+		console_panel.add(console_button_panel, BorderLayout.SOUTH);
+
+		JSplitPane vertical_split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, center_panel, console_panel);
+		vertical_split.setDividerLocation(400);
+		
+		// Assembly
+		center_panel.add(image_container, BorderLayout.CENTER);
+		center_panel.add(side_panel, BorderLayout.EAST);
+		center_panel.add(bottom_panel, BorderLayout.SOUTH);
+		
+		single_panel.add(vertical_split, BorderLayout.CENTER);
 		tabbed_panel.add("Single Image", single_panel);
 
 		// ACTION: Open the editor dialog
