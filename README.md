@@ -15,12 +15,12 @@ Implementation guidelines
 - User can specify the sequence of operations to be executed on the images.
 - The program measures run-time needed to complete.
 - Problem specific implementation requirements
-- Basic gui.GUI to select images and operations should be implemented.
+- Basic kip.gui.GUI to select images and operations should be implemented.
 - The implementation must adapt automatically to the hardware it is being ran on (Physical CPU's, Cores, Memory, etc..).
 - The project must include a few sample images of different sizes.
 
 # Testing
-Testing can be done without gui.GUI.
+Testing can be done without kip.gui.GUI.
 
 All three implementations should be tested.
 The parameter that influences the run-time is the size of the image.
