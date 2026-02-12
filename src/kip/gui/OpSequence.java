@@ -70,7 +70,7 @@ public class OpSequence extends JPanel {
 			public boolean isCellEditable(int row, int column) { return false; }
 		};
 		operation_table = new JTable(table_model);
-		operation_table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		operation_table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
 		TableColumn idColumn = operation_table.getColumnModel().getColumn(0);
 		idColumn.setMaxWidth(40);
@@ -186,14 +186,19 @@ public class OpSequence extends JPanel {
 			updateOperationCount();
 		});
 
-		// REMOVE
 		remove_button.addActionListener(e -> {
-			int row = operation_table.getSelectedRow();
-			if (row != -1) {
-				operations.remove(row);
-				table_model.removeRow(row);
+			int[] selectedRows = operation_table.getSelectedRows();
+			
+			if (selectedRows.length > 0) {
+				for (int i = selectedRows.length - 1; i >= 0; i--) {
+					int actualRow = selectedRows[i];
+					operations.remove(actualRow);
+					table_model.removeRow(actualRow);
+				}
 				reindexTable();
 				updateOperationCount();
+			} else {
+				JOptionPane.showMessageDialog(this, "Please select at least one operation to remove.");
 			}
 		});
 
