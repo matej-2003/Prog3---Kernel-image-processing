@@ -5,10 +5,8 @@ import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableColumn;
+import javax.swing.event.*;
+import javax.swing.table.*;
 
 public class OpSequence extends JPanel {
 	public JTable operation_table;

@@ -5,7 +5,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import javax.imageio.ImageIO;
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
+import javax.swing.table.*;
 
 public class GUI {
 	public static JFrame frame;
@@ -29,9 +29,13 @@ public class GUI {
 		tabbed_panel = new JTabbedPane();
 		editor_panel = new OpSequence(); 
 		run_settings_panel = new RunSettings(); // Initialize the new settings class
-		summary_model = new DefaultTableModel(new Object[]{"#", "Operation"}, 0);
+		summary_model = new DefaultTableModel(new Object[]{"#", "Operation", "Edge method"}, 0);
 		summary_table = new JTable(summary_model);
 		summary_table.setEnabled(false); 
+		
+		TableColumn idColumn = summary_table.getColumnModel().getColumn(0);
+		idColumn.setMaxWidth(40);
+		idColumn.setPreferredWidth(30);
 
 		frame.add(tabbed_panel);
 	}
@@ -175,7 +179,7 @@ public class GUI {
 		summary_model.setRowCount(0);
 		int i = 1;
 		for (Operation op : editor_panel.getOperations()) {
-			summary_model.addRow(new Object[]{i++, op.kernel});
+			summary_model.addRow(new Object[]{i++, op.kernel, op.edge});
 		}
 	}
 
