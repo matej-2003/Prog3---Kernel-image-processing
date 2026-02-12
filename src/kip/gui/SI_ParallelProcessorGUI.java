@@ -1,11 +1,10 @@
 package kip.gui;
 
-import kip.ImageProcessor;
-
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import javax.swing.*;
 import javax.swing.table.*;
+import kip.ImageProcessor;
 
 public class SI_ParallelProcessorGUI extends JPanel {
 	public JFrame frame;
@@ -65,7 +64,6 @@ public class SI_ParallelProcessorGUI extends JPanel {
 		JPanel middle_box = createTitledBox("Thread Chunks (Work Units)", middle_scroll);
 		
 		// Populate the chunks (Example with 12 threads)
-//		chunks_viewer.updateChunks(img, 12);
 
 		// Column 3: Output
 		output_image_label = new JLabel(getScaledIcon(img, 350, 450));
@@ -111,7 +109,6 @@ public class SI_ParallelProcessorGUI extends JPanel {
 	private JPanel createTitledBox(String title, Component comp) {
 		JPanel p = new JPanel(new BorderLayout());
 		p.setBorder(BorderFactory.createTitledBorder(title));
-		// Wrap component in GridBag to keep it centered
 		JPanel wrapper = new JPanel(new GridBagLayout());
 		wrapper.add(comp);
 		p.add(wrapper, BorderLayout.CENTER);

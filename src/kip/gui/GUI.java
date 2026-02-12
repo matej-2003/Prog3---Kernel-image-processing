@@ -43,13 +43,6 @@ public class GUI {
 
 
 	public static void main(String[] args) {
-		// Look and Feel (Optional: Makes it look like the OS native UI)
-//        try {
-//            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-
 		frame = new JFrame("Kernel Image Processor");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setSize(1200, 800);

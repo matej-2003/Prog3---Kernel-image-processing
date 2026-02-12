@@ -1,6 +1,3 @@
-https://stackoverflow.com/questions/6524196/java-get-pixel-array-from-image
-
-
 The program should support different operations such as
 edge detection, 
 sharpen,
@@ -13,11 +10,12 @@ Implementation guidelines
 # Running the program:
 - User can specify the input image or folder with images.
 - User can specify the sequence of operations to be executed on the images.
-- The program measures run-time needed to complete.
-- Problem specific implementation requirements
-- Basic kip.gui.GUI to select images and operations should be implemented.
-- The implementation must adapt automatically to the hardware it is being ran on (Physical CPU's, Cores, Memory, etc..).
+- Basic GUI to select images and operations should be implemented.
 - The project must include a few sample images of different sizes.
+
+
+- The program measures run-time needed to complete.
+- The implementation must adapt automatically to the hardware it is being ran on (Physical CPU's, Cores, Memory, etc..).
 
 # Testing
 Testing can be done without kip.gui.GUI.
