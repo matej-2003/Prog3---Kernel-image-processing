@@ -3,9 +3,12 @@ package kip.gui;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.table.*;
+import kip.ImageProcessor;
 
 public class MI_ProcessorGUI extends JPanel {
 	public JFrame frame;
@@ -18,21 +21,32 @@ public class MI_ProcessorGUI extends JPanel {
 	public JTextField output_path_field;
 	public JButton browse_output_btn;
 
-	public JTable summary_table;
-	public DefaultTableModel summary_model;
+	public JTable opseq_table;
+	public DefaultTableModel opseq_model;
 	public JButton edit_sequence_button, run_button;
-	public JSpinner thread_count_spinner;
 	public JTextArea console_area;
 
 	// The Sequence Editor (Same as Single Image GUI)
-	public OpSequence editor_panel;
+	public OpSequence operations_panel;
 
 	public MI_ProcessorGUI(JFrame frame_) {
 		super(new BorderLayout(10, 10));
 		this.frame = frame_;
 		init_components();
+
+		image_list_model.addElement(new ImageEntry(new File("./data/dice.png")));
+		image_list_model.addElement(new ImageEntry(new File("./data/jackson polluck.png")));
+		image_list_model.addElement(new ImageEntry(new File("./data/leaf.jpg")));
+		image_list_model.addElement(new ImageEntry(new File("./data/mona lisa.jpg")));
+		image_list_model.addElement(new ImageEntry(new File("./data/orange.jpg")));
+		image_list_model.addElement(new ImageEntry(new File("./data/Original_photo_to_emboss.jpg")));
+
 		create_layout();
 		attach_listeners();
+
+		operations_panel.operations.add(new Operation("Edge", "Extend", ""));
+		operations_panel.update_table();
+		refresh_opseq_table();
 	}
 
 	// Helper class to store both the file path and the thumbnail
@@ -47,8 +61,16 @@ public class MI_ProcessorGUI extends JPanel {
 		public String toString() { return file.getName(); }
 	}
 
+	private void refresh_opseq_table() {
+		opseq_model.setRowCount(0);
+		int i = 1;
+		for (Operation op : operations_panel.getOperations()) {
+			opseq_model.addRow(new Object[]{i++, op.kernel, op.edge});
+		}
+	}
+
 	private void init_components() {
-		editor_panel = new OpSequence(); // Initialize the shared editor logic
+		operations_panel = new OpSequence(); // Initialize the shared editor logic
 		
 		image_list_model = new DefaultListModel<>();
 		image_list = new JList<>(image_list_model);
@@ -61,27 +83,22 @@ public class MI_ProcessorGUI extends JPanel {
 		output_path_field = new JTextField("./images/processed/");
 		browse_output_btn = new JButton("Browse...");
 
-		summary_model = new DefaultTableModel(new Object[]{"#", "Operation", "Edge"}, 0);
-		summary_table = new JTable(summary_model);
-		summary_table.setEnabled(false);
+		opseq_model = new DefaultTableModel(new Object[]{"#", "Operation", "Edge"}, 0);
+		opseq_table = new JTable(opseq_model);
+		opseq_table.setEnabled(false);
 		edit_sequence_button = new JButton("Edit Sequence");
 
-		thread_count_spinner = new JSpinner(new SpinnerNumberModel(4, 1, 128, 1));
-		run_button = new JButton("Start Batch Process");
-		run_button.setBackground(new Color(46, 139, 87));
-		run_button.setForeground(Color.WHITE);
-
+		run_button = new JButton("Run Process");
 		console_area = new JTextArea(8, 20);
 
-		
-		TableColumn idColumn = summary_table.getColumnModel().getColumn(0);
+		TableColumn idColumn = opseq_table.getColumnModel().getColumn(0);
 		idColumn.setMaxWidth(40);
 		idColumn.setPreferredWidth(30);
 	}
 
 	private void attach_listeners() {
 		add_img_btn.addActionListener(e -> {
-			JFileChooser chooser = new JFileChooser(".");
+			JFileChooser chooser = new JFileChooser("./data");
 			chooser.setMultiSelectionEnabled(true);
 			if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 				for (File f : chooser.getSelectedFiles()) {
@@ -106,22 +123,26 @@ public class MI_ProcessorGUI extends JPanel {
 		// Open the Sequence Editor in a separate popup window
 		edit_sequence_button.addActionListener(e -> {
 			JDialog dialog = new JDialog(frame, "Edit Processing Sequence", true);
-			dialog.getContentPane().add(editor_panel);
+			dialog.getContentPane().add(operations_panel);
 			dialog.pack();
 			dialog.setLocationRelativeTo(frame);
 			dialog.setVisible(true);
 			
-			// After editor closes, you would sync editor_panel.model to this.summary_model
+			// After editor closes, you would sync operations_panel.model to this.opseq_model
 			syncSequenceTable();
+		});
+
+		run_button.addActionListener((e) -> {
+			run_operations();
 		});
 	}
 
 	private void syncSequenceTable() {
-		// Logic to copy rows from editor_panel to our local summary_table
-		summary_model.setRowCount(0);
+		// Logic to copy rows from operations_panel to our local opseq_table
+		opseq_model.setRowCount(0);
 		int i = 1;
-		for (Operation op : editor_panel.getOperations()) {
-			summary_model.addRow(new Object[]{i++, op.kernel, op.edge});
+		for (Operation op : operations_panel.getOperations()) {
+			opseq_model.addRow(new Object[]{i++, op.kernel, op.edge});
 		}
 	}
 
@@ -152,7 +173,7 @@ public class MI_ProcessorGUI extends JPanel {
 
 	private void create_layout() {
 		// ... (Same as previous layout code provided) ...
-		// Ensure the summary_table is added to the right-hand panel
+		// Ensure the opseq_table is added to the right-hand panel
 		JPanel config_panel = new JPanel(new GridLayout(1, 2, 10, 10));
 
 		JPanel left_panel = new JPanel(new BorderLayout(5, 5));
@@ -164,7 +185,7 @@ public class MI_ProcessorGUI extends JPanel {
 
 		JPanel right_panel = new JPanel(new BorderLayout(5, 5));
 		right_panel.setBorder(BorderFactory.createTitledBorder("Sequence"));
-		right_panel.add(new JScrollPane(summary_table), BorderLayout.CENTER);
+		right_panel.add(new JScrollPane(opseq_table), BorderLayout.CENTER);
 		right_panel.add(edit_sequence_button, BorderLayout.SOUTH);
 
 		config_panel.add(left_panel);
@@ -183,12 +204,72 @@ public class MI_ProcessorGUI extends JPanel {
 		bottom_panel.setBorder(BorderFactory.createTitledBorder("Console Log"));
 		bottom_panel.add(new JScrollPane(console_area), BorderLayout.CENTER);
 		JPanel run_bar = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-		run_bar.add(new JLabel("Threads: ")); run_bar.add(thread_count_spinner);
+		run_bar.add(new JLabel("Threads: "));
 		run_bar.add(run_button);
 		bottom_panel.add(run_bar, BorderLayout.SOUTH);
 
 		JSplitPane main_split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, top_container, bottom_panel);
 		main_split.setDividerLocation(400);
 		add(main_split, BorderLayout.CENTER);
+	}
+
+
+	private void run_operations() {
+		ArrayList<Operation> op_list = operations_panel.getOperations();
+
+		for (int i = 0; i < image_list_model.size(); i++) {
+			ImageEntry elem = image_list_model.get(i);
+
+			BufferedImage current_image = null;
+			try {
+				current_image = ImageIO.read(elem.file);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+
+			if (current_image == null) continue;
+
+			for (Operation op: op_list) {
+				System.out.println(elem.file.getAbsolutePath() + " " + op.kernel + " " + op.edge);
+				
+				ImageProcessor.EdgeMethod em = ImageProcessor.EdgeMethod.EXTEND;
+				if (op.edge.equals("Wrap")) em = ImageProcessor.EdgeMethod.WRAP;
+				if (op.edge.equals("Mirror")) em = ImageProcessor.EdgeMethod.MIRROR;
+	
+				int[][] kernelToUse;
+				switch (op.kernel) {
+					case "Blur" -> kernelToUse = ImageProcessor.blur_kernel;
+					case "Gaussian" -> kernelToUse = ImageProcessor.gaussian_kernel;
+					case "Sharpen" -> kernelToUse = ImageProcessor.sharpen_kernel;
+					case "Emboss" -> kernelToUse = ImageProcessor.emboss_kernel;
+					case "Outline" -> kernelToUse = ImageProcessor.outline_kernel;
+					case "Edge" -> kernelToUse = ImageProcessor.edge_kernel;
+					case "Sobel X" -> kernelToUse = ImageProcessor.sobel_x;
+					case "Sobel Y" -> kernelToUse = ImageProcessor.sobel_y;
+					case "Custom" -> kernelToUse = op.getCustomKernel();
+					default -> kernelToUse = ImageProcessor.indentiy_kernel;
+				}
+	
+				current_image = ImageProcessor.kernel_convolution(current_image, kernelToUse, em);
+			}
+
+			String file_name = "processed_" + elem.file.getName();
+			if (file_name.contains(".")) {
+				file_name = file_name.substring(0, file_name.lastIndexOf('.')) + ".png";
+			} else {
+				file_name += ".png";
+			}
+			String output_dir = output_path_field.getText();
+			File dir = new File(output_dir);
+			File out_file = new File(dir, file_name);
+			
+			try {
+				ImageIO.write(current_image, "png", out_file);
+				console_area.append("Saved to: " + out_file.getAbsolutePath() + "\n");
+			} catch (IOException e) {
+				console_area.append("Failed to save: " + file_name + "\n");
+			}
+		}
+
 	}
 }

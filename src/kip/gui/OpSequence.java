@@ -170,6 +170,8 @@ public class OpSequence extends JPanel {
 		*/
 
 		add(center_panel, BorderLayout.CENTER);
+
+		updateSettingsEnabledState();
 	}
 
 	public void init_actions() {
@@ -199,6 +201,7 @@ public class OpSequence extends JPanel {
 				}
 				reindexTable();
 				updateOperationCount();
+				updateSettingsEnabledState();
 			} else {
 				JOptionPane.showMessageDialog(this, "Please select at least one operation to remove.");
 			}
@@ -230,6 +233,7 @@ public class OpSequence extends JPanel {
 		operation_table.getSelectionModel().addListSelectionListener(e -> {
 			if (!e.getValueIsAdjusting()) {
 				loadSettingsToPanel();
+				updateSettingsEnabledState();
 			}
 		});
 
@@ -248,8 +252,10 @@ public class OpSequence extends JPanel {
 
 				if (op.kernel.equals("Custom")) {
 					custom_kernel_area.setEditable(true);
+					custom_kernel_area.setBackground(Color.WHITE);
 				} else {
 					custom_kernel_area.setEditable(false);
+					custom_kernel_area.setBackground(SystemColor.control);
 				}
 			}
 		};
@@ -312,6 +318,24 @@ public class OpSequence extends JPanel {
 		for (int i = 0; i < operations.size(); i++) {
 			Operation op = operations.get(i);
 			table_model.addRow(new Object[] {i, op.kernel, op.edge});
+		}
+	}
+
+	private void updateSettingsEnabledState() {
+		boolean hasSelection = operation_table.getSelectedRow() != -1;
+		
+		settings_kernel_select.setEnabled(hasSelection);
+		settings_edge_select.setEnabled(hasSelection);
+		
+		if (!hasSelection) {
+			custom_kernel_area.setEditable(false);
+			custom_kernel_area.setText(""); // Clear text if nothing selected
+			custom_kernel_area.setBackground(SystemColor.control); // Gray out background
+		} else {
+			// Only allow editing if it's the "Custom" kernel
+			String kernel = (String) settings_kernel_select.getSelectedItem();
+			custom_kernel_area.setEditable("Custom".equals(kernel));
+			custom_kernel_area.setBackground(Color.WHITE);
 		}
 	}
 

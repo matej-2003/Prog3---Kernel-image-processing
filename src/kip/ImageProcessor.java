@@ -239,7 +239,8 @@ public class ImageProcessor {
 	// 		}
 	// 	}
 	// }
-	public static BufferedImage kernel_convolution(int kernel[][], EdgeMethod edge_method) {
+	public static BufferedImage kernel_convolution(BufferedImage input_image_, int kernel[][], EdgeMethod edge_method) {
+		set_input_img(input_image_);
 		BufferedImage out = new BufferedImage(width, height, input_img.getType());
 		for (int x = 0; x < width; x++) {
 			for (int y = 0; y < height; y++) {
@@ -248,7 +249,7 @@ public class ImageProcessor {
 				set_pixel(x, y, wps, out);
 			}
 		}
-
+		output_img = out;
 		return out;
 	}
 	public static void print_pixel(int[] p) {
@@ -258,7 +259,7 @@ public class ImageProcessor {
 		long startTime = System.currentTimeMillis();
 		System.out.println("Linear execution: ");
 
-		kernel_convolution(kernel, EdgeMethod.EXTEND);
+//		kernel_convolution(kernel, EdgeMethod.EXTEND);
 		
 		long stopTime = System.currentTimeMillis();
 		System.out.println("Run time: " + (stopTime - startTime) + " ms");
