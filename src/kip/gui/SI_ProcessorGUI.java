@@ -26,15 +26,12 @@ public class SI_ProcessorGUI extends JPanel {
 	public JTextArea console_area;
 	public OpSequence operations_panel;
 	private BufferedImage input_image, output_image;
-	private ImageProcessor image_processor;
 
 	public SI_ProcessorGUI(JFrame frame_) {
 		super(new BorderLayout()); 
 		this.frame = frame_;
 		init_components();
 		create_single_panel();
-
-		image_processor = new ImageProcessor();
 
 		display_image(new File("./data/mona lisa.jpg"));
 		operations_panel.operations.add(new Operation("Edge", "Extend", ""));
@@ -213,7 +210,7 @@ public class SI_ProcessorGUI extends JPanel {
 			int option = chooser.showSaveDialog(frame);
 			if(option == JFileChooser.APPROVE_OPTION){
 				File file = chooser.getSelectedFile();
-				image_processor.save_image(file.getAbsolutePath());
+				ImageProcessor.save_image(file.getAbsolutePath());
 			}else{
 				System.out.println("Save command canceled");
 			}
@@ -243,7 +240,7 @@ public class SI_ProcessorGUI extends JPanel {
 				i_pixel_count_label.setText("Pixels: " + (long)img.getWidth() * img.getHeight());
 				console_area.append("Loaded: " + file.getAbsolutePath() + "\n");
 
-				image_processor.set_input_img(input_image);
+				ImageProcessor.set_input_img(input_image);
 			}
 		} catch (Exception ex) {
 			console_area.append("Error: " + ex.getMessage() + "\n");
@@ -272,7 +269,7 @@ public class SI_ProcessorGUI extends JPanel {
 	private void run_operations() {
 		System.out.println("running");
 		ArrayList<Operation> op_list = operations_panel.getOperations();
-		BufferedImage originalImage = deepCopy(image_processor.input_img);
+		BufferedImage originalImage = deepCopy(ImageProcessor.input_img);
 
 		for (Operation op: op_list) {
 			System.out.println("running " + op.kernel);
@@ -288,30 +285,30 @@ public class SI_ProcessorGUI extends JPanel {
 			BufferedImage out;
 
 			switch (op.kernel) {
-				case "Blur" -> image_processor.kernel_convolution(ImageProcessor.blur_kernel, em);
-				case "Gaussian" -> image_processor.kernel_convolution(ImageProcessor.gaussian_kernel, em);
-				case "Sharpen" -> image_processor.kernel_convolution(ImageProcessor.sharpen_kernel, em);
-				case "Emboss" -> image_processor.kernel_convolution(ImageProcessor.emboss_kernel, em);
-				case "Outline" -> image_processor.kernel_convolution(ImageProcessor.outline_kernel, em);
-				case "Edge" -> image_processor.kernel_convolution(ImageProcessor.edge_kernel, em);
-				case "Sobel X" -> image_processor.kernel_convolution(ImageProcessor.sobel_x, em);
-				case "Sobel Y" -> image_processor.kernel_convolution(ImageProcessor.sobel_y, em);
-				case "Custom" -> image_processor.kernel_convolution(op.getCustomKernel(), em);
-				default -> image_processor.kernel_convolution(ImageProcessor.indentiy_kernel, em);
+				case "Blur" -> out = ImageProcessor.kernel_convolution(ImageProcessor.blur_kernel, em);
+				case "Gaussian" -> out = ImageProcessor.kernel_convolution(ImageProcessor.gaussian_kernel, em);
+				case "Sharpen" -> out = ImageProcessor.kernel_convolution(ImageProcessor.sharpen_kernel, em);
+				case "Emboss" -> out = ImageProcessor.kernel_convolution(ImageProcessor.emboss_kernel, em);
+				case "Outline" -> out = ImageProcessor.kernel_convolution(ImageProcessor.outline_kernel, em);
+				case "Edge" -> out = ImageProcessor.kernel_convolution(ImageProcessor.edge_kernel, em);
+				case "Sobel X" -> out = ImageProcessor.kernel_convolution(ImageProcessor.sobel_x, em);
+				case "Sobel Y" -> out = ImageProcessor.kernel_convolution(ImageProcessor.sobel_y, em);
+				case "Custom" -> out = ImageProcessor.kernel_convolution(op.getCustomKernel(), em);
+				default -> out = ImageProcessor.kernel_convolution(ImageProcessor.indentiy_kernel, em);
 			}
 
-			output_image = image_processor.output_img;
+			output_image = ImageProcessor.output_img;
 
 			u_size_label.setText("Size: " + output_image.getWidth() + " x " + output_image.getHeight());
 			u_pixel_count_label.setText("Pixels: " + (long) output_image.getWidth() * output_image.getHeight());
 			save_image_button.setEnabled(true);
 
-			// image_processor.save_image("./" + op.kernel + " test.png");
+			// ImageProcessor.save_image("./" + op.kernel + " test.png");
 			output_image_label.setIcon(get_scaled_icons(output_image, output_image_label));
 
 			console_area.append("Applying: " + op.kernel + " [" + op.edge + "]\n");
 
-			image_processor.input_img = output_image;
+			ImageProcessor.input_img = output_image;
 		}
 	}
 }
