@@ -5,9 +5,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import javax.imageio.ImageIO;
 
 
@@ -230,15 +227,7 @@ public class ImageProcessor {
 
 		return wps;
 	}
-	// public static void kernel_convolution(int kernel[][], EdgeMethod edge_method) {
-	// 	for (int x = 0; x < width; x++) {
-	// 		for (int y = 0; y < height; y++) {
-	// 			int wps[] = weighted_sum(kernel, x, y, edge_method);
-	// 			wps[3] = get_pixel(x, y)[3];
-	// 			set_pixel(x, y, wps);
-	// 		}
-	// 	}
-	// }
+
 	public static BufferedImage kernel_convolution(BufferedImage input_image_, int kernel[][], EdgeMethod edge_method) {
 		set_input_img(input_image_);
 		BufferedImage out = new BufferedImage(width, height, input_img.getType());
@@ -325,95 +314,20 @@ public class ImageProcessor {
 		return new int[] {b, a};
 	}
 	
-	public static void parallelExecution(int thread_number) {
-		System.out.println("Parallel execution: " + thread_number + " threads");
-
-		int chunk_sizes[] = find_chunk_sizes(thread_number);
-		int x_chunk_number = chunk_sizes[0];
-		int y_chunk_number = chunk_sizes[1];
-
-		int width_chunks[][] = make_chunks(width, x_chunk_number);
-		int height_chunks[][] = make_chunks(height, y_chunk_number);
-
-		int kernel_width = kernel[0].length;
-		int kernel_height = kernel.length;
-		int KW2 = (kernel_width - 1) / 2;
-		int KH2 = (kernel_height - 1) / 2;
-
-		// STEP 1: Create a padded image and FILL the edges using Edge Extension
-		// This removes the "black border" effect on the final image edges
-		BufferedImage padded_input_image = new BufferedImage(width + 2 * KW2, height + 2 * KH2, input_img.getType());
-		for (int py = 0; py < padded_input_image.getHeight(); py++) {
-			for (int px = 0; px < padded_input_image.getWidth(); px++) {
-				int[] coords = get_edge_extend(px - KW2, py - KH2);
-				padded_input_image.setRGB(px, py, input_img.getRGB(coords[0], coords[1]));
-			}
-		}
-
-
-		// this is expensive
-		long startTime = System.currentTimeMillis();
-
-		ExecutorService executor = Executors.newFixedThreadPool(thread_number);
-		ArrayList<Future<ChunkResult>> futures = new ArrayList<>();
-
-		for (int x = 0; x < x_chunk_number; x++) {
-			int startX = width_chunks[x][0];
-			int actualW = width_chunks[x][1] - width_chunks[x][0] + 1; // +1 is crucial!
-			int cw = actualW + (kernel_width - 1); 
-
-			for (int y = 0; y < y_chunk_number; y++) {
-				int startY = height_chunks[y][0];
-				int actualH = height_chunks[y][1] - height_chunks[y][0] + 1; // +1 is crucial!
-				int ch = actualH + (kernel_height - 1);
-
-				// Subimage from the fully-padded buffer
-				// We start at startX because index 0 in original is index KW2 in padded
-				BufferedImage sub = padded_input_image.getSubimage(startX, startY, cw, ch);
-				
-				// Clone the subimage to avoid threading issues with shared memory
-				BufferedImage image_chunk = new BufferedImage(sub.getWidth(), sub.getHeight(), sub.getType());
-				Graphics2D g2 = image_chunk.createGraphics();
-				g2.drawImage(sub, 0, 0, null);
-				g2.dispose();
-
-				// Pass the REAL startX/startY so we know where to stitch it back
-				futures.add(executor.submit(new ImageProcessorThread(image_chunk, kernel, startX, startY)));
-			}
-		}
-		executor.shutdown();
-
-		// STEP 2: Stitch back
-		Graphics2D g = output_img.createGraphics();
-		for (Future<ChunkResult> f : futures) {
-			try {
-				ChunkResult processed = f.get();
-				// Draw the processed sub-chunk at its original coordinates
-				g.drawImage(processed.image, processed.x, processed.y, null);
-			} catch (Exception e) { e.printStackTrace(); }
-		}
-		g.dispose();
-
-		long stopTime = System.currentTimeMillis();
-		System.out.println("Run time: " + (stopTime - startTime) + " ms");
-		
-		save_image("para_output.png");
-	}
-
 	public static void test() {
-		// load_image("./data/mona lisa.jpg");
-		load_image("./images/rockefeller_center.jpg");
+		load_image("./images/mona lisa.jpg");
+		// load_image("./images/rockefeller_center.jpg");
 
-//		kernel = new int[][] {
-//				{1, 1, 1, 1, 1, 1, 1},
-//				{1, 1, 1, 1, 1, 1, 1},
-//				{1, 1, 1, 1, 1, 1, 1},
-//				{1, 1, 1, 1, 1, 1, 1},
-//				{1, 1, 1, 1, 1, 1, 1},
-//				{1, 1, 1, 1, 1, 1, 1},
-//				{1, 1, 1, 1, 1, 1, 1},
-//		};
-		kernel = emboss_kernel;
+		kernel = new int[][] {
+				{1, 1, 1, 1, 1, 1, 1},
+				{1, 1, 1, 1, 1, 1, 1},
+				{1, 1, 1, 1, 1, 1, 1},
+				{1, 1, 1, 1, 1, 1, 1},
+				{1, 1, 1, 1, 1, 1, 1},
+				{1, 1, 1, 1, 1, 1, 1},
+				{1, 1, 1, 1, 1, 1, 1},
+		};
+		// kernel = emboss_kernel;
 
 		System.out.println("Image width: " + input_img.getWidth());
 		System.out.println("Image height: " + input_img.getHeight());
@@ -426,17 +340,6 @@ public class ImageProcessor {
 		// linear execution
 		output_img = new BufferedImage(width, height, input_img.getType());
 		linarExecution();
-
-		// parallel execution
-		output_img = new BufferedImage(width, height, input_img.getType());
-		// int thread_numner = Runtime.getRuntime().availableProcessors();
-		// System.out.println(thread_numner);
-		parallelExecution(60);
 	}
 
-	// public ImageProcessor() {}
-
-	public static void main(String[] args) {
-		test();
-	}
 }

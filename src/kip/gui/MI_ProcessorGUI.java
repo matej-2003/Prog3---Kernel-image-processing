@@ -34,12 +34,17 @@ public class MI_ProcessorGUI extends JPanel {
 		this.frame = frame_;
 		init_components();
 
-		image_list_model.addElement(new ImageEntry(new File("./data/dice.png")));
-		image_list_model.addElement(new ImageEntry(new File("./data/jackson polluck.png")));
-		image_list_model.addElement(new ImageEntry(new File("./data/leaf.jpg")));
-		image_list_model.addElement(new ImageEntry(new File("./data/mona lisa.jpg")));
-		image_list_model.addElement(new ImageEntry(new File("./data/orange.jpg")));
-		image_list_model.addElement(new ImageEntry(new File("./data/Original_photo_to_emboss.jpg")));
+		image_list_model.addElement(new ImageEntry(new File("./images/coffee-S.jpg")));
+		image_list_model.addElement(new ImageEntry(new File("./images/dice.png")));
+		image_list_model.addElement(new ImageEntry(new File("./images/iceland.jpg")));
+		image_list_model.addElement(new ImageEntry(new File("./images/jackson polluck.png")));
+		image_list_model.addElement(new ImageEntry(new File("./images/leaf.jpg")));
+		image_list_model.addElement(new ImageEntry(new File("./images/mona lisa.jpg")));
+		image_list_model.addElement(new ImageEntry(new File("./images/orange.jpg")));
+		// image_list_model.addElement(new ImageEntry(new File("./images/Original_photo_to_emboss.jpg")));
+		// image_list_model.addElement(new ImageEntry(new File("./images/polar_bear.jpg")));
+		// image_list_model.addElement(new ImageEntry(new File("./images/rockefeller_center.jpg")));
+		// image_list_model.addElement(new ImageEntry(new File("./images/shanghai.jpg")));
 
 		create_layout();
 		attach_listeners();
@@ -98,7 +103,7 @@ public class MI_ProcessorGUI extends JPanel {
 
 	private void attach_listeners() {
 		add_img_btn.addActionListener(e -> {
-			JFileChooser chooser = new JFileChooser("./data");
+			JFileChooser chooser = new JFileChooser("./images");
 			chooser.setMultiSelectionEnabled(true);
 			if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 				for (File f : chooser.getSelectedFiles()) {

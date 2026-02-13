@@ -33,7 +33,7 @@ public class SI_ProcessorGUI extends JPanel {
 		init_components();
 		create_single_panel();
 
-		display_image(new File("./data/mona lisa.jpg"));
+		display_image(new File("./images/mona lisa.jpg"));
 		operations_panel.operations.add(new Operation("Edge", "Extend", ""));
 		operations_panel.update_table();
 		refresh_opseq_table();
@@ -204,7 +204,7 @@ public class SI_ProcessorGUI extends JPanel {
 
 
 		save_image_button.addActionListener((e) -> {
-			JFileChooser chooser = new JFileChooser("./data");
+			JFileChooser chooser = new JFileChooser("./images");
 			chooser.setSelectedFile(new File("./output.png"));
 			
 			int option = chooser.showSaveDialog(frame);
@@ -218,7 +218,7 @@ public class SI_ProcessorGUI extends JPanel {
 	}
 
 	private void open_image_action() {
-		JFileChooser chooser = new JFileChooser("./data");
+		JFileChooser chooser = new JFileChooser("./images");
 		chooser.setFileFilter(new FileNameExtensionFilter("Images", "jpg", "png", "bmp", "jpeg"));
 		
 		if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
