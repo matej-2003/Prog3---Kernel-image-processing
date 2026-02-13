@@ -3,52 +3,71 @@ package kip.gui;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.util.ArrayList;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.*;
+import kip.ImageProcessor;
 
 public class SI_ProcessorGUI extends JPanel {
 	public JFrame frame;
 	public JLabel input_image_label, output_image_label;
 	
-	public JTable summary_table;
-	public DefaultTableModel summary_model;
+	public JTable opseq_table;
+	public DefaultTableModel opseq_model;
 	
 	// Metadata Labels
-	public JLabel path_label, size_label, pixel_count_label;
+	public JLabel i_path_label, i_size_label, i_pixel_count_label;
+	public JLabel u_size_label, u_pixel_count_label;
 	public JTextField time_field;
-	public JButton run_button, edit_sequence_button, select_image_button;
+	public JButton run_button, edit_sequence_button, select_image_button, save_image_button;
 
 	public JTextArea console_area;
-	public OpSequence editor_panel;
-	private BufferedImage inputImage;
+	public OpSequence operations_panel;
+	private BufferedImage input_image, output_image;
+	private ImageProcessor image_processor;
 
 	public SI_ProcessorGUI(JFrame frame_) {
 		super(new BorderLayout()); 
 		this.frame = frame_;
 		init_components();
 		create_single_panel();
+
+		image_processor = new ImageProcessor();
+
+		display_image(new File("./data/mona lisa.jpg"));
+		operations_panel.operations.add(new Operation("Edge", "Extend", ""));
+		operations_panel.update_table();
+		refresh_opseq_table();
 	}
 
 	public void init_components() {
-		editor_panel = new OpSequence(); 
-		summary_model = new DefaultTableModel(new Object[]{"#", "Operation", "Edge method"}, 0);
-		summary_table = new JTable(summary_model);
-		summary_table.setEnabled(false); 
+		operations_panel = new OpSequence(); 
+		opseq_model = new DefaultTableModel(new Object[]{"#", "Operation", "Edge method"}, 0);
+		opseq_table = new JTable(opseq_model);
+		opseq_table.setEnabled(false); 
 		
 		// Metadata init
-		path_label = new JLabel("Path: None");
-		size_label = new JLabel("Size: 0 x 0");
-		pixel_count_label = new JLabel("Pixels: 0");
-		
+		i_path_label = new JLabel("Path: None");
+		i_size_label = new JLabel("Size: 0 x 0");
+		i_pixel_count_label = new JLabel("Pixels: 0");
+
+				
+		// Metadata init
+		u_size_label = new JLabel("Size: 0 x 0");
+		u_pixel_count_label = new JLabel("Pixels: 0");
+
+		save_image_button = new JButton("Save image");
+		save_image_button.setEnabled(false);
+
 		select_image_button = new JButton("Select Input Image...");
 		
-		TableColumn idColumn = summary_table.getColumnModel().getColumn(0);
+		TableColumn idColumn = opseq_table.getColumnModel().getColumn(0);
 		idColumn.setMaxWidth(40);
 	}
 	
-	private ImageIcon getScaledIcon(BufferedImage src, JLabel targetLabel) {
+	private ImageIcon get_scaled_icons(BufferedImage src, JLabel targetLabel) {
 		if (src == null || targetLabel.getWidth() == 0 || targetLabel.getHeight() == 0)
 			return null;
 
@@ -63,7 +82,6 @@ public class SI_ProcessorGUI extends JPanel {
 		Image scaled = src.getScaledInstance(width, height, Image.SCALE_SMOOTH);
 		return new ImageIcon(scaled);
 	}
-
 
 	public void create_single_panel() {
 		JPanel center_panel = new JPanel(new BorderLayout(10, 10));
@@ -88,18 +106,41 @@ public class SI_ProcessorGUI extends JPanel {
 
 		JPanel left_controls = new JPanel(new BorderLayout(5, 5));
 		JPanel metadata_panel = new JPanel(new GridLayout(3, 1));
-		metadata_panel.add(path_label);
-		metadata_panel.add(size_label);
-		metadata_panel.add(pixel_count_label);
+		metadata_panel.add(i_path_label);
+		metadata_panel.add(i_size_label);
+		metadata_panel.add(i_pixel_count_label);
 		
 		left_controls.add(metadata_panel, BorderLayout.CENTER);
 		left_controls.add(select_image_button, BorderLayout.SOUTH);
 		left_box.add(left_controls, BorderLayout.SOUTH);
 
 		// --- RIGHT BOX (Output) ---
-		JPanel right_box = new JPanel(new BorderLayout());
-		right_box.setBorder(BorderFactory.createTitledBorder("Output Preview"));
+		// JPanel right_box = new JPanel(new BorderLayout());
+		// JPanel right_metadata_p = new JPanel(new GridLayout(2, 1));
+		// right_metadata_p.add(u_size_label);
+		// right_metadata_p.add(u_pixel_count_label);
+		
+		// left_controls.add(right_metadata_p, BorderLayout.CENTER);
+		// left_controls.add(select_image_button, BorderLayout.SOUTH);
+		// left_box.add(left_controls, BorderLayout.SOUTH);
+
+		// right_box.setBorder(BorderFactory.createTitledBorder("Output Preview"));
+		// right_box.add(output_scroll, BorderLayout.CENTER);
+
+
+		JPanel right_box = new JPanel(new BorderLayout(5, 5));
+		right_box.setBorder(BorderFactory.createTitledBorder("Input"));
 		right_box.add(output_scroll, BorderLayout.CENTER);
+
+		JPanel right_controls = new JPanel(new BorderLayout(5, 5));
+		JPanel r_metadata_panel = new JPanel(new GridLayout(3, 1));
+		r_metadata_panel.add(u_size_label);
+		r_metadata_panel.add(u_pixel_count_label);
+		
+		right_controls.add(r_metadata_panel, BorderLayout.CENTER);
+		right_controls.add(save_image_button, BorderLayout.SOUTH);
+		right_box.add(right_controls, BorderLayout.SOUTH);
+
 
 		image_container.add(left_box);
 		image_container.add(right_box);
@@ -109,7 +150,7 @@ public class SI_ProcessorGUI extends JPanel {
 		side_panel.setPreferredSize(new Dimension(220, 0));
 		side_panel.setBorder(BorderFactory.createTitledBorder("Sequence Summary"));
 		edit_sequence_button = new JButton("Edit Sequence...");
-		side_panel.add(new JScrollPane(summary_table), BorderLayout.CENTER);
+		side_panel.add(new JScrollPane(opseq_table), BorderLayout.CENTER);
 		side_panel.add(edit_sequence_button, BorderLayout.SOUTH);
 
 		// ===== BOTTOM BAR (Time & Execution) =====
@@ -147,62 +188,130 @@ public class SI_ProcessorGUI extends JPanel {
 		add(vertical_split, BorderLayout.CENTER);
 
 		// Listeners
-		edit_sequence_button.addActionListener(e -> showEditorDialog());
-		select_image_button.addActionListener(e -> openImageAction());
+		edit_sequence_button.addActionListener(e -> show_editor_dialog());
+		select_image_button.addActionListener(e -> open_image_action());
 
 
 		input_image_label.addComponentListener(new java.awt.event.ComponentAdapter() {
 			public void componentResized(java.awt.event.ComponentEvent e) {
-				if (inputImage != null) {
-					input_image_label.setIcon(getScaledIcon(inputImage, input_image_label));
+				if (input_image != null) {
+					input_image_label.setIcon(get_scaled_icons(input_image, input_image_label));
 				}
 			}
 		});
 
+
+		run_button.addActionListener((e) -> {
+			run_operations();
+		});
+
+
+		save_image_button.addActionListener((e) -> {
+			JFileChooser chooser = new JFileChooser("./data");
+			chooser.setSelectedFile(new File("./output.png"));
+			
+			int option = chooser.showSaveDialog(frame);
+			if(option == JFileChooser.APPROVE_OPTION){
+				File file = chooser.getSelectedFile();
+				image_processor.save_image(file.getAbsolutePath());
+			}else{
+				System.out.println("Save command canceled");
+			}
+		});
 	}
 
-	private void openImageAction() {
+	private void open_image_action() {
 		JFileChooser chooser = new JFileChooser("./data");
 		chooser.setFileFilter(new FileNameExtensionFilter("Images", "jpg", "png", "bmp", "jpeg"));
 		
 		if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-			File file = chooser.getSelectedFile();
-			try {
-				BufferedImage img = ImageIO.read(file);
-				if (img != null) {
-					inputImage = img;
-					input_image_label.setIcon(getScaledIcon(img, input_image_label));
-					output_image_label.setIcon(null);
-
-					// Update Metadata Labels
-					path_label.setText("Path: " + file.getName());
-					size_label.setText("Size: " + img.getWidth() + " x " + img.getHeight());
-					pixel_count_label.setText("Pixels: " + (long)img.getWidth() * img.getHeight());
-					
-					console_area.append("Loaded: " + file.getAbsolutePath() + "\n");
-				}
-			} catch (Exception ex) {
-				console_area.append("Error: " + ex.getMessage() + "\n");
-			}
+			display_image(chooser.getSelectedFile());
 		}
 	}
 
-	private void showEditorDialog() {
+	private void display_image(File file) {
+		try {
+			BufferedImage img = ImageIO.read(file);
+			if (img != null) {
+				input_image = img;
+				input_image_label.setIcon(get_scaled_icons(img, input_image_label));
+				output_image_label.setIcon(null);
+
+				// Update Metadata Labels
+				i_path_label.setText("Path: " + file.getName());
+				i_size_label.setText("Size: " + img.getWidth() + " x " + img.getHeight());
+				i_pixel_count_label.setText("Pixels: " + (long)img.getWidth() * img.getHeight());
+				console_area.append("Loaded: " + file.getAbsolutePath() + "\n");
+
+				image_processor.set_input_img(input_image);
+			}
+		} catch (Exception ex) {
+			console_area.append("Error: " + ex.getMessage() + "\n");
+		}
+	}
+
+	private void show_editor_dialog() {
 		JDialog dialog = new JDialog(frame, "Operation Sequence Editor", true);
-		dialog.add(editor_panel);
+		dialog.add(operations_panel);
 		dialog.setSize(1000, 600);
 		dialog.setLocationRelativeTo(frame);
 		dialog.addWindowListener(new java.awt.event.WindowAdapter() {
-			public void windowClosing(java.awt.event.WindowEvent e) { refreshSummaryTable(); }
+			public void windowClosing(java.awt.event.WindowEvent e) { refresh_opseq_table(); }
 		});
 		dialog.setVisible(true);
 	}
 
-	private void refreshSummaryTable() {
-		summary_model.setRowCount(0);
+	private void refresh_opseq_table() {
+		opseq_model.setRowCount(0);
 		int i = 1;
-		for (Operation op : editor_panel.getOperations()) {
-			summary_model.addRow(new Object[]{i++, op.kernel, op.edge});
+		for (Operation op : operations_panel.getOperations()) {
+			opseq_model.addRow(new Object[]{i++, op.kernel, op.edge});
+		}
+	}
+
+	private void run_operations() {
+		System.out.println("running");
+		ArrayList<Operation> op_list = operations_panel.getOperations();
+		BufferedImage originalImage = deepCopy(image_processor.input_img);
+
+		for (Operation op: op_list) {
+			System.out.println("running " + op.kernel);
+
+			ImageProcessor.EdgeMethod em = ImageProcessor.EdgeMethod.EXTEND;
+
+			switch (op.kernel) {
+				case "Extend" -> em = ImageProcessor.EdgeMethod.EXTEND;
+				case "Wrap" -> em = ImageProcessor.EdgeMethod.WRAP;
+				case "Mirror" -> em = ImageProcessor.EdgeMethod.MIRROR;
+			}
+
+			BufferedImage out;
+
+			switch (op.kernel) {
+				case "Blur" -> image_processor.kernel_convolution(ImageProcessor.blur_kernel, em);
+				case "Gaussian" -> image_processor.kernel_convolution(ImageProcessor.gaussian_kernel, em);
+				case "Sharpen" -> image_processor.kernel_convolution(ImageProcessor.sharpen_kernel, em);
+				case "Emboss" -> image_processor.kernel_convolution(ImageProcessor.emboss_kernel, em);
+				case "Outline" -> image_processor.kernel_convolution(ImageProcessor.outline_kernel, em);
+				case "Edge" -> image_processor.kernel_convolution(ImageProcessor.edge_kernel, em);
+				case "Sobel X" -> image_processor.kernel_convolution(ImageProcessor.sobel_x, em);
+				case "Sobel Y" -> image_processor.kernel_convolution(ImageProcessor.sobel_y, em);
+				case "Custom" -> image_processor.kernel_convolution(op.getCustomKernel(), em);
+				default -> image_processor.kernel_convolution(ImageProcessor.indentiy_kernel, em);
+			}
+
+			output_image = image_processor.output_img;
+
+			u_size_label.setText("Size: " + output_image.getWidth() + " x " + output_image.getHeight());
+			u_pixel_count_label.setText("Pixels: " + (long) output_image.getWidth() * output_image.getHeight());
+			save_image_button.setEnabled(true);
+
+			// image_processor.save_image("./" + op.kernel + " test.png");
+			output_image_label.setIcon(get_scaled_icons(output_image, output_image_label));
+
+			console_area.append("Applying: " + op.kernel + " [" + op.edge + "]\n");
+
+			image_processor.input_img = output_image;
 		}
 	}
 }

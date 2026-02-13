@@ -4,8 +4,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -13,18 +12,25 @@ import javax.imageio.ImageIO;
 
 
 public class ImageProcessor {
-	public static BufferedImage input_img, output_img;
-	public static File f = null;
-	public static int width, height;
+	public BufferedImage input_img, output_img;
+	public File f = null;
+	public int width, height;
 	public static int[][] blur_kernel, gaussian_kernel, sharpen_kernel, emboss_kernel, outline_kernel, sobel_x, sobel_y, indentiy_kernel, edge_kernel;
-	public static int[][] kernel;
+	public int[][] kernel;
+	public static final Map<String, int[][]> KERNELS = new HashMap<>();
+
+	public enum EdgeMethod {
+		EXTEND,
+		WRAP,
+		MIRROR
+	}
 
 	@FunctionalInterface
 	public interface EdgeHandler {
 		int[] get(int x, int y);
 	}
 	
-	public static void init_kernels() {
+	static {
 		blur_kernel = new int[][] {
 				{1, 1, 1},
 				{1, 1, 1},
@@ -79,21 +85,25 @@ public class ImageProcessor {
 				{0, -1, 0},
 		};
 	}
-	public static void load_image(String filename) {
+
+	public void set_input_img(BufferedImage img) {
+		input_img = img;
+		width = input_img.getWidth();
+		height = input_img.getHeight();
+	}
+
+	public void load_image(String filename) {
 		File f = null;
 
 		try {
 			f = new File(filename);
-			input_img = ImageIO.read(f);
+			set_input_img(ImageIO.read(f));
 		}
 		catch (IOException e) {
 			System.out.println(e);
 		}
-
-		width = input_img.getWidth();
-		height = input_img.getHeight();
 	}
-	public static void save_image(BufferedImage out, String filename) {
+	public void save_image(BufferedImage out, String filename) {
 		try {
 			f = new File(filename);
 			ImageIO.write(out, "png", f);
@@ -102,10 +112,10 @@ public class ImageProcessor {
 			System.out.println(e);
 		}
 	}
-	public static void save_image(String filename) {
+	public void save_image(String filename) {
 		save_image(output_img, filename);
 	}
-	public static int[] get_edge_extend(int x, int y) {
+	public int[] get_edge_extend(int x, int y) {
 		while (x < 0) x += 1;
 		while (x >= width) x--;
 		while (y < 0) y += 1;
@@ -113,13 +123,13 @@ public class ImageProcessor {
 
 		return new int[] {x, y};
 	}
-	public static int[] get_edge_wrap(int x, int y) {
+	public int[] get_edge_wrap(int x, int y) {
 		x = ((x % width) + width) % width;
 		y = ((y % height) + height) % height;
 
 		return new int[] {x, y};
 	}
-	public static int[] get_edge_mirror(int x, int y) {
+	public int[] get_edge_mirror(int x, int y) {
 		while (x < 0) x = -x;
 		while (x >= width) x = 2 * width - x;
 		while (y < 0) y = -y;
@@ -127,7 +137,7 @@ public class ImageProcessor {
 
 		return new int[] {x, y};
 	}
-	public static int[] get_pixel(int x, int y) {
+	public int[] get_pixel(int x, int y) {
 		int p = input_img.getRGB(x, y);
 
 		int a = (p >> 24) & 0xff;
@@ -137,16 +147,23 @@ public class ImageProcessor {
 
 		return new int[] {r, g, b, a};
 	}
-	public static int[] get_pixel(int x, int y, EdgeHandler edge_handler) {
+	public int[] get_pixel(int x, int y, EdgeMethod edge_method) {
 		// System.out.println("b x=" + x + " y=" + y);
-		int pixle_coordinates[] = edge_handler.get(x, y);
+		int pixle_coordinates[] = new int[2];
+
+		switch (edge_method) {
+			case EXTEND -> pixle_coordinates = get_edge_extend(x, y);
+			case WRAP -> pixle_coordinates = get_edge_wrap(x, y);
+			case MIRROR -> pixle_coordinates = get_edge_wrap(x, y);
+		}
+
 		// System.out.println("a x=" + x + " y=" + y);
 		x = pixle_coordinates[0];
 		y = pixle_coordinates[1];
 
 		return get_pixel(x, y);
 	}
-	public static void set_pixel(int x, int y, int pixel[]) {
+	public void set_pixel(int x, int y, int pixel[]) {
 		int r = pixel[0];
 		int g = pixel[1];
 		int b = pixel[2];
@@ -155,7 +172,18 @@ public class ImageProcessor {
 		int p = (a << 24) | (r << 16) | (g << 8) | b;
 		output_img.setRGB(x, y, p);
 	}
-	public static int sum_kernel(int kernel[][]) {
+
+	public void set_pixel(int x, int y, int pixel[], BufferedImage out) {
+		int r = pixel[0];
+		int g = pixel[1];
+		int b = pixel[2];
+		int a = pixel[3];
+
+		int p = (a << 24) | (r << 16) | (g << 8) | b;
+		out.setRGB(x, y, p);
+	}
+
+	public int sum_kernel(int kernel[][]) {
 		int sum = 0;
 		int kernel_width  = kernel[0].length;
 		int kernel_height = kernel.length;
@@ -168,7 +196,7 @@ public class ImageProcessor {
 
 		return sum;
 	}
-	public static int[] weighted_sum(int kernel[][], int x, int y, EdgeHandler edge_handler) {
+	public int[] weighted_sum(int kernel[][], int x, int y, EdgeMethod edge_method) {
 		int kernel_width  = kernel[0].length;
 		int kernel_height = kernel.length;
 		int kernel_sum = sum_kernel(kernel);
@@ -178,7 +206,7 @@ public class ImageProcessor {
 
 		for (int r = 0; r < kernel_height; r++) {
 			for (int c = 0; c < kernel_width; c++) {
-				int p[] = get_pixel(x + c - KW2, y + r - KH2, edge_handler);
+				int p[] = get_pixel(x + c - KW2, y + r - KH2, edge_method);
 				int w = kernel[r][c];
 				//System.out.println("c " + c  + " r " + r + " w " + w);
 				//print_pixel(p);
@@ -207,35 +235,43 @@ public class ImageProcessor {
 
 		return wps;
 	}
-	public static void kernel_convolution(int kernel[][], EdgeHandler edge_handler) {
+	// public void kernel_convolution(int kernel[][], EdgeMethod edge_method) {
+	// 	for (int x = 0; x < width; x++) {
+	// 		for (int y = 0; y < height; y++) {
+	// 			int wps[] = weighted_sum(kernel, x, y, edge_method);
+	// 			wps[3] = get_pixel(x, y)[3];
+	// 			set_pixel(x, y, wps);
+	// 		}
+	// 	}
+	// }
+	public BufferedImage kernel_convolution(int kernel[][], EdgeMethod edge_method) {
+		BufferedImage out = new BufferedImage(width, height, input_img.getType());
 		for (int x = 0; x < width; x++) {
 			for (int y = 0; y < height; y++) {
-				int wps[] = weighted_sum(kernel, x, y, edge_handler);
+				int wps[] = weighted_sum(kernel, x, y, edge_method);
 				wps[3] = get_pixel(x, y)[3];
-				set_pixel(x, y, wps);
+				set_pixel(x, y, wps, out);
 			}
 		}
+
+		return out;
 	}
-	public static void print_pixel(int[] p) {
+	public void print_pixel(int[] p) {
 		System.out.println("(r=" + p[0] + ", g=" + p[1] + ", b=" + p[2]+ ", a=" + p[3] + ")");
 	}
-	
-	
-	public static void linarExecution() {
+	public void linarExecution() {
 		long startTime = System.currentTimeMillis();
 		System.out.println("Linear execution: ");
 
-		kernel_convolution(kernel, ImageProcessor::get_edge_extend);
+		kernel_convolution(kernel, EdgeMethod.EXTEND);
 		
 		long stopTime = System.currentTimeMillis();
 		System.out.println("Run time: " + (stopTime - startTime) + " ms");
 		save_image("line_output.png");
 	}
 	
-
 	// parallel function
-
-	public static BufferedImage with_padding(BufferedImage img, int n) {
+	public BufferedImage with_padding(BufferedImage img, int n) {
 		BufferedImage out = new BufferedImage(img.getWidth() + n, img.getHeight() + n, img.getType());
 
 		Graphics2D g = out.createGraphics();
@@ -244,7 +280,7 @@ public class ImageProcessor {
 
 		return out;
 	}
-	public static int[][] make_chunks(int size, int n) {
+	public int[][] make_chunks(int size, int n) {
 		int chunks[][] = new int[n][2];
 
 		int r = size % n;
@@ -262,7 +298,7 @@ public class ImageProcessor {
 
 		return chunks;
 	}
-	public static int[] find_chunk_sizes(int thread_n) {
+	public int[] find_chunk_sizes(int thread_n) {
 		ArrayList<Integer> factors = new ArrayList<>();
 
 		for (int i = 1; i < Math.ceil(thread_n/2); i++) {
@@ -293,8 +329,7 @@ public class ImageProcessor {
 		return new int[] {b, a};
 	}
 	
-	
-	public static void parallelExecution(int thread_number) {
+	public void parallelExecution(int thread_number) {
 		System.out.println("Parallel execution: " + thread_number + " threads");
 
 		int chunk_sizes[] = find_chunk_sizes(thread_number);
@@ -324,7 +359,7 @@ public class ImageProcessor {
 		long startTime = System.currentTimeMillis();
 
 		ExecutorService executor = Executors.newFixedThreadPool(thread_number);
-		List<Future<ChunkResult>> futures = new ArrayList<>();
+		ArrayList<Future<ChunkResult>> futures = new ArrayList<>();
 
 		for (int x = 0; x < x_chunk_number; x++) {
 			int startX = width_chunks[x][0];
@@ -369,10 +404,9 @@ public class ImageProcessor {
 		save_image("para_output.png");
 	}
 
-	public static void main(String[] args) {
+	public void test() {
 		// load_image("./data/mona lisa.jpg");
 		load_image("./images/rockefeller_center.jpg");
-		init_kernels();
 
 //		kernel = new int[][] {
 //				{1, 1, 1, 1, 1, 1, 1},
@@ -402,5 +436,11 @@ public class ImageProcessor {
 		// int thread_numner = Runtime.getRuntime().availableProcessors();
 		// System.out.println(thread_numner);
 		parallelExecution(60);
+	}
+
+	public ImageProcessor() {}
+
+	public static void main(String[] args) {
+		(new ImageProcessor()).test();
 	}
 }

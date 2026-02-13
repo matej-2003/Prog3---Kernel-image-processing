@@ -46,7 +46,7 @@ public class KernelEditorUI extends JFrame {
 				}
 			}
 
-			mainUI.setCustomKernel(customKernel);
+//			mainUI.setCustomKernel(customKernel);
 
 			JOptionPane.showMessageDialog(this, "Kernel updated!");
 

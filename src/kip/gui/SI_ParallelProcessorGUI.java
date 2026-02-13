@@ -44,11 +44,11 @@ public class SI_ParallelProcessorGUI extends JPanel {
 		// ===== IMAGES (3 Columns) =====
 		JPanel image_container = new JPanel(new GridLayout(1, 3, 10, 10));
 		
-		BufferedImage img;
+		BufferedImage img = null;
 		try {
 			// Load the image using your processor's logic for consistency
-			ImageProcessor.load_image("./data/mona lisa.jpg");
-			img = ImageProcessor.input_img;
+			// ImageProcessor.load_image("./data/mona lisa.jpg");
+			// img = ImageProcessor.input_img;
 		} catch (Exception e) {
 			img = new BufferedImage(400, 400, BufferedImage.TYPE_INT_RGB);
 		}

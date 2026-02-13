@@ -19,12 +19,13 @@ public class OpSequence extends JPanel {
 	public JTextArea custom_kernel_area, console_area;
 	public JButton run_button, save_button;
 
-	public String kernel_list[] = {"Identity", "Blur", "Gaussian", "Sharpen", "Emboss", "Outline", "Edge", "Sobel X", "Sobel Y", "Custom"};
-	public String edge_list[] = {"Zero padding", "Clamp", "Wrap", "Mirror"};
+	public String kernel_list[] = {"Blur", "Identity", "Gaussian", "Sharpen", "Emboss", "Outline", "Edge", "Sobel X", "Sobel Y", "Custom"};
+	public String edge_list[] = {"Extend", "Wrap", "Mirror"};
+
 
 	// Ključni seznam operacij
-	private ArrayList<Operation> operations;
-	private boolean isUpdating = false; // Flag za preprečevanje neskončnih zank pri posodabljanju GUI
+	public ArrayList<Operation> operations;
+	public boolean isUpdating = false; // Flag za preprečevanje neskončnih zank pri posodabljanju GUI
 
 	public OpSequence() {
 		operations = new ArrayList<>();
@@ -37,20 +38,20 @@ public class OpSequence extends JPanel {
 		return operations;
 	}
 
-	private void reindexTable() {
+	public void reindexTable() {
 		for (int i = 0; i < table_model.getRowCount(); i++) {
 			table_model.setValueAt(i + 1, i, 0);
 		}
 	}
 
-	private void updateOperationCount() {
+	public void updateOperationCount() {
 		operation_count_label.setText("Operations in sequence: " + operations.size());
 	}
 
 	/**
 	 * Naloži nastavitve izbrane operacije v desni panel
 	 */
-	private void loadSettingsToPanel() {
+	public void loadSettingsToPanel() {
 		int row = operation_table.getSelectedRow();
 		if (row == -1) return;
 
@@ -82,6 +83,7 @@ public class OpSequence extends JPanel {
 		settings_edge_select = new JComboBox<>(edge_list);
 
 		custom_kernel_area = new JTextArea(10, 12);
+		custom_kernel_area.setEditable(false);
 		operation_count_label = new JLabel("Operations in sequence: 0");
 		estimated_ops_label = new JLabel("Estimated total operations: 0");
 
@@ -243,6 +245,12 @@ public class OpSequence extends JPanel {
 				
 				table_model.setValueAt(op.kernel, row, 1);
 				table_model.setValueAt(op.edge, row, 2);
+
+				if (op.kernel.equals("Custom")) {
+					custom_kernel_area.setEditable(true);
+				} else {
+					custom_kernel_area.setEditable(false);
+				}
 			}
 		};
 
@@ -255,7 +263,7 @@ public class OpSequence extends JPanel {
 			public void removeUpdate(DocumentEvent e) { checkCustom(); }
 			public void changedUpdate(DocumentEvent e) { checkCustom(); }
 			
-			private void checkCustom() {
+			public void checkCustom() {
 				// 1. If we are currently loading a row from the table, do nothing
 				if (isUpdating) return; 
 
@@ -284,7 +292,7 @@ public class OpSequence extends JPanel {
 		});
 	}
 
-	private void updateSettingsFromSelection() {
+	public void updateSettingsFromSelection() {
 		int row = operation_table.getSelectedRow();
 		if (row == -1) return;
 
@@ -298,6 +306,13 @@ public class OpSequence extends JPanel {
 
 		// 2. SET FLAG TO FALSE
 		isUpdating = false; 
+	}
+
+	public void update_table() {
+		for (int i = 0; i < operations.size(); i++) {
+			Operation op = operations.get(i);
+			table_model.addRow(new Object[] {i, op.kernel, op.edge});
+		}
 	}
 
 	public static void main(String[] args) {

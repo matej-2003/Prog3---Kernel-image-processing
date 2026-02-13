@@ -1,15 +1,9 @@
 package kip;
 
 import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.image.BufferedImage;
-import javax.imageio.ImageIO;
-import java.io.File;
-import java.io.IOException;
 
 public class Main extends JFrame {
-
+/*
 	JLabel inputLabel = new JLabel();
 	JButton applyBtn = new JButton("Apply");
 	JLabel outputLabel = new JLabel();
@@ -172,4 +166,5 @@ public class Main extends JFrame {
 		ImageProcessor.init_kernels();
 		new Main();
 	}
+		*/
 }
