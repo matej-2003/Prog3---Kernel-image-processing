@@ -12,9 +12,9 @@ public class ImageProcessor {
 	public static BufferedImage input_img, output_img;
 	public static File f = null;
 	public static int width, height;
-	public static int[][] blur_kernel, gaussian_kernel, sharpen_kernel, emboss_kernel, outline_kernel, sobel_x, sobel_y, indentiy_kernel, edge_kernel;
-	public static int[][] kernel;
-	public static final Map<String, int[][]> KERNELS = new HashMap<>();
+	public static float[][] blur_kernel, gaussian_kernel, sharpen_kernel, emboss_kernel, outline_kernel, sobel_x, sobel_y, indentiy_kernel, edge_kernel;
+	public static float[][] kernel;
+	public static final Map<String, float[][]> KERNELS = new HashMap<>();
 
 	public enum EdgeMethod {
 		EXTEND,
@@ -23,55 +23,55 @@ public class ImageProcessor {
 	}
 	
 	static {
-		blur_kernel = new int[][] {
+		blur_kernel = new float[][] {
 				{1, 1, 1},
 				{1, 1, 1},
 				{1, 1, 1},
 		};
 
-		gaussian_kernel = new int[][] {
+		gaussian_kernel = new float[][] {
 				{1, 2, 1},
 				{2, 4, 2},
 				{1, 2, 1},
 		};
 
-		sharpen_kernel = new int[][] {
+		sharpen_kernel = new float[][] {
 				{-1, -1, -1},
 				{-1, 9, -1},
 				{-1, -1, -1},
 		};
 
-		emboss_kernel = new int[][] {
+		emboss_kernel = new float[][] {
 				{0, 1, 0},
 				{0, 0, 0},
 				{0, -1, 0},
 		};
 
-		outline_kernel = new int[][] {
+		outline_kernel = new float[][] {
 				{-1, -1, -1},
 				{-1, 8, -1},
 				{-1, -1, -1},
 		};
 
-		sobel_x = new int[][] {
+		sobel_x = new float[][] {
 				{-1, 0, 1},
 				{-2, 0, 2},
 				{-1, 0, 1},
 		};
 
-		sobel_y = new int[][] {
+		sobel_y = new float[][] {
 				{-1, -2, -1},
 				{0, 0, 0},
 				{1, 2, 1},
 		};
 
-		indentiy_kernel = new int[][] {
+		indentiy_kernel = new float[][] {
 				{0, 0, 0},
 				{0, 1, 0},
 				{0, 0, 0},
 		};
 
-		edge_kernel = new int[][] {
+		edge_kernel = new float[][] {
 				{0, -1, 0},
 				{-1, 8, -1},
 				{0, -1, 0},
@@ -123,9 +123,9 @@ public class ImageProcessor {
 	}
 	public static int[] get_edge_mirror(int x, int y) {
 		while (x < 0) x = -x;
-		while (x >= width) x = 2 * width - x;
+		while (x >= width) x = width - 1 - (x - width);
 		while (y < 0) y = -y;
-		while (y >= height) y = 2 * height - y;
+		while (y >= height) y = height - 1 - (y - height);
 
 		return new int[] {x, y};
 	}
@@ -146,7 +146,7 @@ public class ImageProcessor {
 		switch (edge_method) {
 			case EXTEND -> pixle_coordinates = get_edge_extend(x, y);
 			case WRAP -> pixle_coordinates = get_edge_wrap(x, y);
-			case MIRROR -> pixle_coordinates = get_edge_wrap(x, y);
+			case MIRROR -> pixle_coordinates = get_edge_mirror(x, y);
 		}
 
 		// System.out.println("a x=" + x + " y=" + y);
@@ -175,7 +175,7 @@ public class ImageProcessor {
 		out.setRGB(x, y, p);
 	}
 
-	public static int sum_kernel(int kernel[][]) {
+	public static int sum_kernel(float kernel[][]) {
 		int sum = 0;
 		int kernel_width  = kernel[0].length;
 		int kernel_height = kernel.length;
@@ -188,18 +188,18 @@ public class ImageProcessor {
 
 		return sum;
 	}
-	public static int[] weighted_sum(int kernel[][], int x, int y, EdgeMethod edge_method) {
+	public static int[] weighted_sum(float kernel[][], int x, int y, EdgeMethod edge_method) {
 		int kernel_width  = kernel[0].length;
 		int kernel_height = kernel.length;
 		int kernel_sum = sum_kernel(kernel);
 		int KW2 = (kernel_width-1)/2;
 		int KH2 = (kernel_height-1)/2;
-		int wps[] = {0, 0, 0, 255};
+		float wps[] = {0.f, 0.f, 0.f, 255.f};
 
 		for (int r = 0; r < kernel_height; r++) {
 			for (int c = 0; c < kernel_width; c++) {
 				int p[] = get_pixel(x + c - KW2, y + r - KH2, edge_method);
-				int w = kernel[r][c];
+				float w = kernel[r][c];
 				//System.out.println("c " + c  + " r " + r + " w " + w);
 				//print_pixel(p);
 
@@ -225,10 +225,10 @@ public class ImageProcessor {
 
 		// wps[3] /= kernel_sum;
 
-		return wps;
+		return new int[] {(int) wps[0], (int) wps[1], (int) wps[2], (int) wps[3]};
 	}
 
-	public static BufferedImage kernel_convolution(BufferedImage input_image_, int kernel[][], EdgeMethod edge_method) {
+	public static BufferedImage kernel_convolution(BufferedImage input_image_, float kernel[][], EdgeMethod edge_method) {
 		set_input_img(input_image_);
 		BufferedImage out = new BufferedImage(width, height, input_img.getType());
 		for (int x = 0; x < width; x++) {
@@ -317,7 +317,7 @@ public class ImageProcessor {
 		load_image("./images/mona lisa.jpg");
 		// load_image("./images/rockefeller_center.jpg");
 
-		kernel = new int[][] {
+		kernel = new float[][] {
 				{1, 1, 1, 1, 1, 1, 1},
 				{1, 1, 1, 1, 1, 1, 1},
 				{1, 1, 1, 1, 1, 1, 1},

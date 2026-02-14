@@ -18,16 +18,16 @@ public class Operation {
 		return "Operation [kernel=" + kernel + ", edge=" + edge + "]";
 	}
 
-	public int[][] getCustomKernel() {
+	public float[][] getCustomKernel() {
 		try {
 			String kernel_tokes[] = custom_kernel.split("\n");
-			int[][] c_kernel = new int[kernel_tokes.length][];
+			float[][] c_kernel = new float[kernel_tokes.length][];
 			for (int i = 0; i < kernel_tokes.length; i++) {
 				String line_tokes[] = kernel_tokes[i].split("\s+");
-				c_kernel[i] = new int[line_tokes.length];
+				c_kernel[i] = new float[line_tokes.length];
 	
 				for (int j = 0; j < line_tokes.length; j++) {
-					int e = Integer.parseInt(line_tokes[j]);
+					float e = Float.parseFloat(line_tokes[j]);
 					c_kernel[i][j] = e;
 				}
 			}

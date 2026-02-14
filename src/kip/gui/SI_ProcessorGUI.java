@@ -31,7 +31,7 @@ public class SI_ProcessorGUI extends JPanel {
 		init_components();
 		create_single_panel();
 
-		display_image(new File("./images/mona lisa.png"));
+		display_image(new File("./images/mona lisa-s.png"));
 		operations_panel.operations.add(new Operation("Emboss", "Extend", ""));
 		operations_panel.update_table();
 		refresh_opseq_table();
@@ -262,7 +262,7 @@ public class SI_ProcessorGUI extends JPanel {
 			if (op.edge.equals("Wrap")) em = ImageProcessor.EdgeMethod.WRAP;
 			if (op.edge.equals("Mirror")) em = ImageProcessor.EdgeMethod.MIRROR;
 			
-			int[][] kernelToUse;
+			float[][] kernelToUse;
 			switch (op.kernel) {
 				case "Blur" -> kernelToUse = ImageProcessor.blur_kernel;
 				case "Gaussian" -> kernelToUse = ImageProcessor.gaussian_kernel;

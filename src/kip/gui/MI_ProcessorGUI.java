@@ -230,7 +230,7 @@ public class MI_ProcessorGUI extends JPanel {
 				if (op.edge.equals("Wrap")) em = ImageProcessor.EdgeMethod.WRAP;
 				if (op.edge.equals("Mirror")) em = ImageProcessor.EdgeMethod.MIRROR;
 	
-				int[][] kernelToUse;
+				float[][] kernelToUse;
 				switch (op.kernel) {
 					case "Blur" -> kernelToUse = ImageProcessor.blur_kernel;
 					case "Gaussian" -> kernelToUse = ImageProcessor.gaussian_kernel;

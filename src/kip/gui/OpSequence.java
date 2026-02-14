@@ -48,7 +48,7 @@ public class OpSequence extends JPanel {
 		int row = operation_table.getSelectedRow();
 		if (row == -1) return;
 
-		isUpdating = true; // Onemogoči sprožanje listenerjev med nalaganjem
+		isUpdating = true;
 		Operation op = operations.get(row);
 		settings_kernel_select.setSelectedItem(op.kernel);
 		settings_edge_select.setSelectedItem(op.edge);
@@ -155,7 +155,6 @@ public class OpSequence extends JPanel {
 			operations.add(new Operation(k, ed, ""));
 			table_model.addRow(new Object[]{operations.size(), k, ed});
 			
-			// ADD THIS: Auto-select the new row
 			int lastRow = table_model.getRowCount() - 1;
 			operation_table.setRowSelectionInterval(lastRow, lastRow);
 			
@@ -239,16 +238,12 @@ public class OpSequence extends JPanel {
 			public void changedUpdate(DocumentEvent e) { checkCustom(); }
 			
 			public void checkCustom() {
-				// 1. If we are currently loading a row from the table, do nothing
 				if (isUpdating) return; 
 
 				int row = operation_table.getSelectedRow();
 				if (row != -1) {
-					// 2. Update the custom_kernel string in our object
 					operations.get(row).custom_kernel = custom_kernel_area.getText();
 
-					// 3. If the user typed something, switch the dropdown to "Custom"
-					// We check !isEmpty to avoid switching if the field was just cleared
 					if (!custom_kernel_area.getText().trim().isEmpty()) {
 						if (!settings_kernel_select.getSelectedItem().equals("Custom")) {
 							settings_kernel_select.setSelectedItem("Custom");
