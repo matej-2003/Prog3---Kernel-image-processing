@@ -21,11 +21,8 @@ public class OpSequence extends JPanel {
 
 	public String kernel_list[] = {"Blur", "Identity", "Gaussian", "Sharpen", "Emboss", "Outline", "Edge", "Sobel X", "Sobel Y", "Custom"};
 	public String edge_list[] = {"Extend", "Wrap", "Mirror"};
-
-
-	// Ključni seznam operacij
 	public ArrayList<Operation> operations;
-	public boolean isUpdating = false; // Flag za preprečevanje neskončnih zank pri posodabljanju GUI
+	public boolean isUpdating = false;
 
 	public OpSequence() {
 		operations = new ArrayList<>();
@@ -33,7 +30,6 @@ public class OpSequence extends JPanel {
 		init_actions();
 	}
 
-	// Metoda, ki jo potrebuje drug razred
 	public ArrayList<Operation> getOperations() {
 		return operations;
 	}
@@ -48,9 +44,6 @@ public class OpSequence extends JPanel {
 		operation_count_label.setText("Operations in sequence: " + operations.size());
 	}
 
-	/**
-	 * Naloži nastavitve izbrane operacije v desni panel
-	 */
 	public void loadSettingsToPanel() {
 		int row = operation_table.getSelectedRow();
 		if (row == -1) return;
@@ -149,33 +142,12 @@ public class OpSequence extends JPanel {
 		center_panel.add(left_panel);
 		center_panel.add(right_panel);
 
-		// CONSOLE
-		/*
-		console_area = new JTextArea();
-		console_area.setEditable(false);
-		JPanel console_button_panel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-		run_button = new JButton("Run");
-		save_button = new JButton("Save Images");
-		console_button_panel.add(run_button);
-		console_button_panel.add(save_button);
-
-		JPanel console_panel = new JPanel(new BorderLayout(5, 5));
-		console_panel.setBorder(BorderFactory.createTitledBorder("Console"));
-		console_panel.add(new JScrollPane(console_area), BorderLayout.CENTER);
-		console_panel.add(console_button_panel, BorderLayout.SOUTH);
-
-		JSplitPane vertical_split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, center_panel, console_panel);
-		vertical_split.setDividerLocation(400);
-		add(vertical_split, BorderLayout.CENTER);
-		*/
-
 		add(center_panel, BorderLayout.CENTER);
 
 		updateSettingsEnabledState();
 	}
 
 	public void init_actions() {
-		// Inside add_button listener
 		add_button.addActionListener(e -> {
 			String k = (String) toolbar_kernel_select.getSelectedItem();
 			String ed = (String) toolbar_edge_select.getSelectedItem();
@@ -229,7 +201,6 @@ public class OpSequence extends JPanel {
 			}
 		});
 
-		// Klik na vrstico v tabeli -> naloži nastavitve na desno
 		operation_table.getSelectionModel().addListSelectionListener(e -> {
 			if (!e.getValueIsAdjusting()) {
 				loadSettingsToPanel();
@@ -238,7 +209,6 @@ public class OpSequence extends JPanel {
 		});
 
 		ActionListener settingsUpdater = e -> {
-			// IF WE ARE CURRENTLY LOADING A ROW, DO NOT OVERWRITE DATA
 			if (isUpdating) return; 
 
 			int row = operation_table.getSelectedRow();
@@ -260,7 +230,6 @@ public class OpSequence extends JPanel {
 			}
 		};
 
-		// Apply to dropdowns
 		settings_kernel_select.addActionListener(settingsUpdater);
 		settings_edge_select.addActionListener(settingsUpdater);
 
@@ -288,9 +257,7 @@ public class OpSequence extends JPanel {
 				}
 			}
 		});
-
 		
-		// Inside init_actions()
 		operation_table.getSelectionModel().addListSelectionListener(e -> {
 			if (!e.getValueIsAdjusting()) {
 				updateSettingsFromSelection();
@@ -329,10 +296,9 @@ public class OpSequence extends JPanel {
 		
 		if (!hasSelection) {
 			custom_kernel_area.setEditable(false);
-			custom_kernel_area.setText(""); // Clear text if nothing selected
-			custom_kernel_area.setBackground(SystemColor.control); // Gray out background
+			custom_kernel_area.setText("");
+			custom_kernel_area.setBackground(SystemColor.control);
 		} else {
-			// Only allow editing if it's the "Custom" kernel
 			String kernel = (String) settings_kernel_select.getSelectedItem();
 			custom_kernel_area.setEditable("Custom".equals(kernel));
 			custom_kernel_area.setBackground(Color.WHITE);

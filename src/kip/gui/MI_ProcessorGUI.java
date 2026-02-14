@@ -12,8 +12,6 @@ import kip.ImageProcessor;
 
 public class MI_ProcessorGUI extends JPanel {
 	public JFrame frame;
-	
-	// UI Components
 	public DefaultListModel<ImageEntry> image_list_model;
 	public JList<ImageEntry> image_list;
 	public JButton add_img_btn, remove_img_btn;
@@ -26,7 +24,7 @@ public class MI_ProcessorGUI extends JPanel {
 	public JButton edit_sequence_button, run_button;
 	public JTextArea console_area;
 
-	// The Sequence Editor (Same as Single Image GUI)
+	
 	public OpSequence operations_panel;
 
 	public MI_ProcessorGUI(JFrame frame_) {
@@ -34,27 +32,20 @@ public class MI_ProcessorGUI extends JPanel {
 		this.frame = frame_;
 		init_components();
 
-		image_list_model.addElement(new ImageEntry(new File("./images/coffee-S.jpg")));
-		image_list_model.addElement(new ImageEntry(new File("./images/dice.png")));
-		image_list_model.addElement(new ImageEntry(new File("./images/iceland.jpg")));
-		image_list_model.addElement(new ImageEntry(new File("./images/jackson polluck.png")));
-		image_list_model.addElement(new ImageEntry(new File("./images/leaf.jpg")));
-		image_list_model.addElement(new ImageEntry(new File("./images/mona lisa.jpg")));
-		image_list_model.addElement(new ImageEntry(new File("./images/orange.jpg")));
-		// image_list_model.addElement(new ImageEntry(new File("./images/Original_photo_to_emboss.jpg")));
-		// image_list_model.addElement(new ImageEntry(new File("./images/polar_bear.jpg")));
-		// image_list_model.addElement(new ImageEntry(new File("./images/rockefeller_center.jpg")));
-		// image_list_model.addElement(new ImageEntry(new File("./images/shanghai.jpg")));
+		image_list_model.addElement(new ImageEntry(new File("./images/landscape-s.jpg")));
+		image_list_model.addElement(new ImageEntry(new File("./images/mountain-s.jpg")));
+		image_list_model.addElement(new ImageEntry(new File("./images/night-s.jpg")));
+		image_list_model.addElement(new ImageEntry(new File("./images/orange-s.jpg")));
+		image_list_model.addElement(new ImageEntry(new File("./images/river-s.jpg")));
 
 		create_layout();
 		attach_listeners();
 
-		operations_panel.operations.add(new Operation("Edge", "Extend", ""));
+		operations_panel.operations.add(new Operation("", "Extend", ""));
 		operations_panel.update_table();
 		refresh_opseq_table();
 	}
 
-	// Helper class to store both the file path and the thumbnail
 	private class ImageEntry {
 		File file;
 		ImageIcon thumbnail;
@@ -75,12 +66,12 @@ public class MI_ProcessorGUI extends JPanel {
 	}
 
 	private void init_components() {
-		operations_panel = new OpSequence(); // Initialize the shared editor logic
+		operations_panel = new OpSequence(); 
 		
 		image_list_model = new DefaultListModel<>();
 		image_list = new JList<>(image_list_model);
 		image_list.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-		image_list.setCellRenderer(new ImageListRenderer()); // Set custom visual style
+		image_list.setCellRenderer(new ImageListRenderer()); 
 		
 		add_img_btn = new JButton("Add Images...");
 		remove_img_btn = new JButton("Remove Selected");
@@ -125,7 +116,7 @@ public class MI_ProcessorGUI extends JPanel {
 			}
 		});
 
-		// Open the Sequence Editor in a separate popup window
+		
 		edit_sequence_button.addActionListener(e -> {
 			JDialog dialog = new JDialog(frame, "Edit Processing Sequence", true);
 			dialog.getContentPane().add(operations_panel);
@@ -133,7 +124,7 @@ public class MI_ProcessorGUI extends JPanel {
 			dialog.setLocationRelativeTo(frame);
 			dialog.setVisible(true);
 			
-			// After editor closes, you would sync operations_panel.model to this.opseq_model
+			
 			syncSequenceTable();
 		});
 
@@ -143,7 +134,7 @@ public class MI_ProcessorGUI extends JPanel {
 	}
 
 	private void syncSequenceTable() {
-		// Logic to copy rows from operations_panel to our local opseq_table
+		
 		opseq_model.setRowCount(0);
 		int i = 1;
 		for (Operation op : operations_panel.getOperations()) {
@@ -161,7 +152,6 @@ public class MI_ProcessorGUI extends JPanel {
 		}
 	}
 
-	// Custom Renderer to show Image + Text in the JList
 	private class ImageListRenderer extends DefaultListCellRenderer {
 		@Override
 		public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
@@ -177,8 +167,6 @@ public class MI_ProcessorGUI extends JPanel {
 	}
 
 	private void create_layout() {
-		// ... (Same as previous layout code provided) ...
-		// Ensure the opseq_table is added to the right-hand panel
 		JPanel config_panel = new JPanel(new GridLayout(1, 2, 10, 10));
 
 		JPanel left_panel = new JPanel(new BorderLayout(5, 5));
@@ -209,7 +197,6 @@ public class MI_ProcessorGUI extends JPanel {
 		bottom_panel.setBorder(BorderFactory.createTitledBorder("Console Log"));
 		bottom_panel.add(new JScrollPane(console_area), BorderLayout.CENTER);
 		JPanel run_bar = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-		run_bar.add(new JLabel("Threads: "));
 		run_bar.add(run_button);
 		bottom_panel.add(run_bar, BorderLayout.SOUTH);
 
@@ -221,6 +208,8 @@ public class MI_ProcessorGUI extends JPanel {
 
 	private void run_operations() {
 		ArrayList<Operation> op_list = operations_panel.getOperations();
+		long totalStartTime = System.currentTimeMillis();
+		console_area.append("Starting process...\n");
 
 		for (int i = 0; i < image_list_model.size(); i++) {
 			ImageEntry elem = image_list_model.get(i);
@@ -254,8 +243,10 @@ public class MI_ProcessorGUI extends JPanel {
 					case "Custom" -> kernelToUse = op.getCustomKernel();
 					default -> kernelToUse = ImageProcessor.indentiy_kernel;
 				}
-	
+				long imageStartTime = System.currentTimeMillis();
+				console_area.append("Processing: " + elem.file.getName() + "...");
 				current_image = ImageProcessor.kernel_convolution(current_image, kernelToUse, em);
+				console_area.append(" Done (" + (System.currentTimeMillis() - imageStartTime) + " ms)\n");
 			}
 
 			String file_name = "processed_" + elem.file.getName();
@@ -276,5 +267,7 @@ public class MI_ProcessorGUI extends JPanel {
 			}
 		}
 
+		long totalEndTime = System.currentTimeMillis();
+		console_area.append("\nTotal time: " + (totalEndTime - totalStartTime) + " ms\n");
 	}
 }

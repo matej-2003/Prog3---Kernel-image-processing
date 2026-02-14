@@ -13,11 +13,9 @@ import kip.ImageProcessor;
 public class SI_ProcessorGUI extends JPanel {
 	public JFrame frame;
 	public JLabel input_image_label, output_image_label;
-	
 	public JTable opseq_table;
 	public DefaultTableModel opseq_model;
 	
-	// Metadata Labels
 	public JLabel i_path_label, i_size_label, i_pixel_count_label;
 	public JLabel u_size_label, u_pixel_count_label;
 	public JTextField time_field;
@@ -33,8 +31,8 @@ public class SI_ProcessorGUI extends JPanel {
 		init_components();
 		create_single_panel();
 
-		display_image(new File("./images/mona lisa.jpg"));
-		operations_panel.operations.add(new Operation("Edge", "Extend", ""));
+		display_image(new File("./images/mona lisa.png"));
+		operations_panel.operations.add(new Operation("Emboss", "Extend", ""));
 		operations_panel.update_table();
 		refresh_opseq_table();
 	}
@@ -45,13 +43,10 @@ public class SI_ProcessorGUI extends JPanel {
 		opseq_table = new JTable(opseq_model);
 		opseq_table.setEnabled(false); 
 		
-		// Metadata init
 		i_path_label = new JLabel("Path: None");
 		i_size_label = new JLabel("Size: 0 x 0");
 		i_pixel_count_label = new JLabel("Pixels: 0");
 
-				
-		// Metadata init
 		u_size_label = new JLabel("Size: 0 x 0");
 		u_pixel_count_label = new JLabel("Pixels: 0");
 
@@ -83,20 +78,17 @@ public class SI_ProcessorGUI extends JPanel {
 	public void create_single_panel() {
 		JPanel center_panel = new JPanel(new BorderLayout(10, 10));
 
-		// ===== IMAGES (Input & Output) =====
 		JPanel image_container = new JPanel(new GridLayout(1, 2, 10, 10));
 		
 		input_image_label = new JLabel("", SwingConstants.CENTER);
 		output_image_label = new JLabel("", SwingConstants.CENTER);
 
-		// Use JScrollPanes to stop the layout from "jumping" when console is resized
 		JScrollPane input_scroll = new JScrollPane(input_image_label);
 		input_scroll.setPreferredSize(new Dimension(400, 450));
 		
 		JScrollPane output_scroll = new JScrollPane(output_image_label);
 		output_scroll.setPreferredSize(new Dimension(400, 450));
 
-		// --- LEFT BOX (Input + Selection + Metadata) ---
 		JPanel left_box = new JPanel(new BorderLayout(5, 5));
 		left_box.setBorder(BorderFactory.createTitledBorder("Input"));
 		left_box.add(input_scroll, BorderLayout.CENTER);
@@ -110,20 +102,6 @@ public class SI_ProcessorGUI extends JPanel {
 		left_controls.add(metadata_panel, BorderLayout.CENTER);
 		left_controls.add(select_image_button, BorderLayout.SOUTH);
 		left_box.add(left_controls, BorderLayout.SOUTH);
-
-		// --- RIGHT BOX (Output) ---
-		// JPanel right_box = new JPanel(new BorderLayout());
-		// JPanel right_metadata_p = new JPanel(new GridLayout(2, 1));
-		// right_metadata_p.add(u_size_label);
-		// right_metadata_p.add(u_pixel_count_label);
-		
-		// left_controls.add(right_metadata_p, BorderLayout.CENTER);
-		// left_controls.add(select_image_button, BorderLayout.SOUTH);
-		// left_box.add(left_controls, BorderLayout.SOUTH);
-
-		// right_box.setBorder(BorderFactory.createTitledBorder("Output Preview"));
-		// right_box.add(output_scroll, BorderLayout.CENTER);
-
 
 		JPanel right_box = new JPanel(new BorderLayout(5, 5));
 		right_box.setBorder(BorderFactory.createTitledBorder("Input"));
@@ -142,7 +120,6 @@ public class SI_ProcessorGUI extends JPanel {
 		image_container.add(left_box);
 		image_container.add(right_box);
 
-		// ===== SIDE PANEL (Sequence) =====
 		JPanel side_panel = new JPanel(new BorderLayout(5, 5));
 		side_panel.setPreferredSize(new Dimension(220, 0));
 		side_panel.setBorder(BorderFactory.createTitledBorder("Sequence Summary"));
@@ -150,9 +127,7 @@ public class SI_ProcessorGUI extends JPanel {
 		side_panel.add(new JScrollPane(opseq_table), BorderLayout.CENTER);
 		side_panel.add(edit_sequence_button, BorderLayout.SOUTH);
 
-		// ===== BOTTOM BAR (Time & Execution) =====
 		JPanel bottom_bar = new JPanel(new BorderLayout());
-		
 		JPanel time_panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 		time_field = new JTextField("0", 6);
 		time_field.setEditable(false);
@@ -166,7 +141,6 @@ public class SI_ProcessorGUI extends JPanel {
 		bottom_bar.add(time_panel, BorderLayout.WEST);
 		bottom_bar.add(run_panel, BorderLayout.EAST);
 
-		// ===== CONSOLE =====
 		console_area = new JTextArea();
 		console_area.setEditable(false);
 		JPanel console_panel = new JPanel(new BorderLayout(5, 5));
@@ -174,7 +148,6 @@ public class SI_ProcessorGUI extends JPanel {
 		console_panel.add(new JScrollPane(console_area), BorderLayout.CENTER);
 		console_panel.add(bottom_bar, BorderLayout.SOUTH);
 
-		// ===== ASSEMBLY =====
 		center_panel.add(image_container, BorderLayout.CENTER);
 		center_panel.add(side_panel, BorderLayout.EAST);
 		
@@ -184,10 +157,8 @@ public class SI_ProcessorGUI extends JPanel {
 		
 		add(vertical_split, BorderLayout.CENTER);
 
-		// Listeners
 		edit_sequence_button.addActionListener(e -> show_editor_dialog());
 		select_image_button.addActionListener(e -> open_image_action());
-
 
 		input_image_label.addComponentListener(new java.awt.event.ComponentAdapter() {
 			public void componentResized(java.awt.event.ComponentEvent e) {
@@ -197,11 +168,9 @@ public class SI_ProcessorGUI extends JPanel {
 			}
 		});
 
-
 		run_button.addActionListener((e) -> {
 			run_operations();
 		});
-
 
 		save_image_button.addActionListener((e) -> {
 			JFileChooser chooser = new JFileChooser("./images");
@@ -227,14 +196,19 @@ public class SI_ProcessorGUI extends JPanel {
 	}
 
 	private void display_image(File file) {
+		save_image_button.setEnabled(false); 
+		input_image_label.setIcon(null);
+		input_image_label.setText("Loading: " + file.getName() + "...");
+		input_image_label.paintImmediately(input_image_label.getVisibleRect());
+
 		try {
 			BufferedImage img = ImageIO.read(file);
 			if (img != null) {
 				input_image = img;
+				input_image_label.setText("");
 				input_image_label.setIcon(get_scaled_icons(img, input_image_label));
 				output_image_label.setIcon(null);
 
-				// Update Metadata Labels
 				i_path_label.setText("Path: " + file.getName());
 				i_size_label.setText("Size: " + img.getWidth() + " x " + img.getHeight());
 				i_pixel_count_label.setText("Pixels: " + (long)img.getWidth() * img.getHeight());
@@ -243,6 +217,7 @@ public class SI_ProcessorGUI extends JPanel {
 				ImageProcessor.set_input_img(input_image);
 			}
 		} catch (Exception ex) {
+			input_image_label.setText("Error loading image.");
 			console_area.append("Error: " + ex.getMessage() + "\n");
 		}
 	}
@@ -267,20 +242,26 @@ public class SI_ProcessorGUI extends JPanel {
 	}
 
 	private void run_operations() {
+		save_image_button.setEnabled(false);
+		output_image_label.setIcon(null);
+		output_image_label.setText("Processing sequence...");
+		output_image_label.paintImmediately(output_image_label.getVisibleRect());
+
 		console_area.append("running" + "\n");
 		ArrayList<Operation> op_list = operations_panel.getOperations();
-		// BufferedImage originalImage = deepCopy(ImageProcessor.input_img);
 		BufferedImage current_image = input_image;
+
+		long totalStartTime = System.currentTimeMillis();
 
 		for (Operation op: op_list) {
 			console_area.append("running " + op.kernel + " " + op.edge + "\n");
 			
 			BufferedImage out;
-
+			
 			ImageProcessor.EdgeMethod em = ImageProcessor.EdgeMethod.EXTEND;
 			if (op.edge.equals("Wrap")) em = ImageProcessor.EdgeMethod.WRAP;
 			if (op.edge.equals("Mirror")) em = ImageProcessor.EdgeMethod.MIRROR;
-
+			
 			int[][] kernelToUse;
 			switch (op.kernel) {
 				case "Blur" -> kernelToUse = ImageProcessor.blur_kernel;
@@ -294,11 +275,24 @@ public class SI_ProcessorGUI extends JPanel {
 				case "Custom" -> kernelToUse = op.getCustomKernel();
 				default -> kernelToUse = ImageProcessor.indentiy_kernel;
 			}
+			
+			long opStartTime = System.currentTimeMillis();
 
 			current_image = ImageProcessor.kernel_convolution(current_image, kernelToUse, em);
+			
+			long opEndTime = System.currentTimeMillis();
+			console_area.append("kernel convolution " + op.kernel + ": " + (opEndTime - opStartTime) + " ms\n");
 		}
 
+		long totalEndTime = System.currentTimeMillis();
+		long totalTime = totalEndTime - totalStartTime;
+		time_field.setText(String.valueOf(totalTime));
+		console_area.append("Total time: " + totalTime + " ms\n\n");
+
 		output_image = current_image;
+		output_image_label.setIcon(get_scaled_icons(output_image, output_image_label));
+
+		output_image_label.setText(""); 
 		output_image_label.setIcon(get_scaled_icons(output_image, output_image_label));
 
 		u_size_label.setText("Size: " + output_image.getWidth() + " x " + output_image.getHeight());

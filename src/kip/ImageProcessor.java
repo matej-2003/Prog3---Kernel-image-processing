@@ -255,7 +255,6 @@ public class ImageProcessor {
 		save_image("line_output.png");
 	}
 	
-	// parallel function
 	public BufferedImage with_padding(BufferedImage img, int n) {
 		BufferedImage out = new BufferedImage(img.getWidth() + n, img.getHeight() + n, img.getType());
 
