@@ -2,3 +2,4 @@ image_chunks/
 *.class
 output.png
 images/processed
+images/output.jpg
