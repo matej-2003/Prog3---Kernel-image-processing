@@ -1,5 +1,5 @@
 <!-- The program should support different operations such as
-edge detection, 
+edge detection,
 sharpen,
 blur
 mirror.
@@ -7,7 +7,18 @@ mirror.
 
 Implementation guidelines -->
 
-# Running the program:
+# **Razvojna opomba:**
+
+Pri implementaciji sem za specifične tehnične izzive uporabil ChatGPT (GPT 5.2) in Google AI Studio (gemini-3-flash-preview) kot pomoč pri:
+- iskanju in odpravljanju napak v kodi, predvsem pri izdelavi grafičnega vmesnika v Java Swing,
+- izboljšavi grafičnega vmesnika.
+
+Implementacija samega algoritma (ImageProcessor.java) je rezultat izvirnega avtorskega dela brez uporabe kakršnihkoli AI modelov.
+
+# Running the program
+Open the program in InteliJ IDEA and run the Main.java class.
+
+# Requirements:
 - User can specify the input image or folder with images.
 - User can specify the sequence of operations to be executed on the images.
 - Basic GUI to select images and operations should be implemented.
@@ -35,9 +46,9 @@ convert dice.png -define convolve:scale=1 -convolve "-1,-1,-1 -1,8,-1 -1,-1,-1" 
 `
 
 
-I tried this for mona lisa image but i do not get the same result as returned by my program. 
+I tried this for mona lisa image but i do not get the same result as returned by my program.
 
-## Image source: 
+## Image source:
 - ![PNG Transparency Demo](https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png)
 - ![Guggenheim Artwork](https://www.guggenheim.org/wp-content/uploads/1946/01/76.2553.147_ph_web-1.jpg)
 - ![Mona Lisa - Leonardo da Vinci](https://upload.wikimedia.org/wikipedia/commons/6/6a/Mona_Lisa,_by_Leonardo_da_Vinci,_from_C2RMF_retouched.jpg)

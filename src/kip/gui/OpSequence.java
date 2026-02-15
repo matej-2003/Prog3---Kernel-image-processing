@@ -2,6 +2,10 @@ package kip.gui;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import javax.swing.*;
@@ -17,7 +21,8 @@ public class OpSequence extends JPanel {
 	public JComboBox<String> settings_kernel_select, settings_edge_select;
 	public JLabel operation_count_label, estimated_ops_label;
 	public JTextArea custom_kernel_area, console_area;
-	public JButton run_button, save_button;
+	public JButton run_button;
+	public JButton toggle_button, save_seq_button, load_seq_button;
 
 	public String kernel_list[] = {"Blur", "Identity", "Gaussian", "Sharpen", "Emboss", "Outline", "Edge", "Sobel X", "Sobel Y", "Custom"};
 	public String edge_list[] = {"Extend", "Wrap", "Mirror"};
@@ -58,12 +63,31 @@ public class OpSequence extends JPanel {
 
 	public void init_components() {
 		setLayout(new BorderLayout(5, 5));
-
+		
 		table_model = new DefaultTableModel(new Object[]{"#", "Kernel", "Edge handling"}, 0) {
 			@Override
 			public boolean isCellEditable(int row, int column) { return false; }
 		};
-		operation_table = new JTable(table_model);
+
+		operation_table = new JTable(table_model) {
+			@Override
+			public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
+				Component c = super.prepareRenderer(renderer, row, column);
+				
+				// Get the operation linked to this row
+				if (row < operations.size()) {
+					Operation op = operations.get(row);
+					if (!op.enabled) {
+						c.setBackground(new Color(230, 230, 230)); // Light grey for disabled
+						c.setForeground(Color.GRAY);
+					} else if (!isRowSelected(row)) {
+						c.setBackground(Color.WHITE);
+						c.setForeground(Color.BLACK);
+					}
+				}
+				return c;
+			}
+		};
 		operation_table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
 		TableColumn idColumn = operation_table.getColumnModel().getColumn(0);
@@ -92,6 +116,9 @@ public class OpSequence extends JPanel {
 		remove_button = new JButton(new ImageIcon("./icons/cross.png"));
 		up_button = new JButton(new ImageIcon("./icons/arrow-up.png"));
 		down_button = new JButton(new ImageIcon("./icons/arrow-down.png"));
+		save_seq_button = new JButton(new ImageIcon("./icons/export.png"));
+		load_seq_button = new JButton(new ImageIcon("./icons/import.png"));
+		toggle_button = new JButton("Toggle On/Off");
 
 		toolbar.add(toolbar_kernel_select);
 		toolbar.add(toolbar_edge_select);
@@ -99,6 +126,11 @@ public class OpSequence extends JPanel {
 		toolbar.add(remove_button);
 		toolbar.add(up_button);
 		toolbar.add(down_button);
+		toolbar.add(toggle_button);
+		toolbar.add(new JSeparator(JSeparator.VERTICAL));
+		toolbar.add(save_seq_button);
+		toolbar.add(load_seq_button);
+
 		left_panel.add(toolbar, BorderLayout.SOUTH);
 
 		// RIGHT PANEL
@@ -258,6 +290,55 @@ public class OpSequence extends JPanel {
 				updateSettingsFromSelection();
 			}
 		});
+
+
+
+				// TOGGLE ENABLE/DISABLE
+		toggle_button.addActionListener(e -> {
+			int[] rows = operation_table.getSelectedRows();
+			for (int row : rows) {
+				Operation op = operations.get(row);
+				op.enabled = !op.enabled; // Flip the state
+			}
+			operation_table.repaint(); // Refresh colors
+		});
+
+		// SAVE TO FILE
+		save_seq_button.addActionListener(e -> {
+			JFileChooser chooser = new JFileChooser();
+			if (chooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+				try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(chooser.getSelectedFile()))) {
+					oos.writeObject(operations);
+					JOptionPane.showMessageDialog(this, "Sequence Saved!");
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
+			}
+		});
+
+		// LOAD FROM FILE
+		load_seq_button.addActionListener(e -> {
+			JFileChooser chooser = new JFileChooser();
+			if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+				try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(chooser.getSelectedFile()))) {
+					ArrayList<Operation> loaded = (ArrayList<Operation>) ois.readObject();
+					operations.clear();
+					operations.addAll(loaded);
+					
+					// Refresh Table View
+					table_model.setRowCount(0);
+					for (int i = 0; i < operations.size(); i++) {
+						Operation op = operations.get(i);
+						table_model.addRow(new Object[]{i + 1, op.kernel, op.edge});
+					}
+					updateOperationCount();
+					operation_table.repaint();
+				} catch (Exception ex) {
+					JOptionPane.showMessageDialog(this, "Load failed: " + ex.getMessage());
+				}
+			}
+		});
+
 	}
 
 	public void updateSettingsFromSelection() {

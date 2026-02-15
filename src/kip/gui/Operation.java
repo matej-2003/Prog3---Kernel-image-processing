@@ -2,15 +2,20 @@ package kip.gui;
 
 import kip.ImageProcessor;
 
-public class Operation {
+import java.io.Serializable;
+
+public class Operation implements Serializable {
+    private static final long serialVersionUID = 1L; 
 	public String kernel;
 	public String edge;
 	public String custom_kernel;
+	public boolean enabled;
 
 	public Operation(String kernel, String edge, String custom_kernel) {
 		this.kernel = kernel;
 		this.edge = edge;
 		this.custom_kernel = custom_kernel;
+		this.enabled = true;
 	}
 
 	@Override
