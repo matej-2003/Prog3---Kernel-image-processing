@@ -15,7 +15,6 @@ public class SI_ProcessorGUI extends JPanel {
 	public JLabel input_image_label, output_image_label;
 	public JTable opseq_table;
 	public DefaultTableModel opseq_model;
-	
 	public JLabel i_path_label, i_size_label, i_pixel_count_label;
 	public JLabel u_size_label, u_pixel_count_label;
 	public JTextField time_field;
