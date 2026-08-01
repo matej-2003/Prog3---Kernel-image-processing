@@ -20,13 +20,13 @@ def trippy_kernel(height, width, scale=15):
 	return kernel
 
 # Configuration
-num_kernels = 1
+num_kernels = 10
 filename = "kernels.txt"
 
 with open(filename, "w") as f:
 	for _ in range(num_kernels):
-		h = random.randint(3, 7) # Kept small for performance
-		w = random.randint(3, 7)
+		h = random.randint(3, 17) # Kept small for performance
+		w = random.randint(3, 17)
 		kernel = trippy_kernel(h, w)
 		
 		# Write metadata: height width

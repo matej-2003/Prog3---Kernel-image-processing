@@ -205,7 +205,6 @@ public class MI_ProcessorGUI extends JPanel {
 		add(main_split, BorderLayout.CENTER);
 	}
 
-
 	private void run_operations() {
 		ArrayList<Operation> op_list = operations_panel.getOperations();
 		long totalStartTime = System.currentTimeMillis();
